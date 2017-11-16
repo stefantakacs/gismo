@@ -49,10 +49,10 @@ public:
     typedef gsBSplineBasis<T> Basis;
 
     /// Shared pointer for gsBSpline
-    typedef memory::shared_ptr< gsBSpline<T> > Ptr;
+    typedef memory::shared_ptr< gsBSpline > Ptr;
 
     /// Unique pointer for gsBSpline
-    typedef memory::unique_ptr<gsBSpline> uPtr;
+    typedef memory::unique_ptr< gsBSpline > uPtr;
     
 public:
     
@@ -135,10 +135,8 @@ public:
                           "Number of coefficients does not match the size of the basis.");
         }
     }
-    
-    /// Clone function. Used to make a copy of the (derived) geometry
-    virtual gsBSpline * clone() const
-        { return new gsBSpline(*this); }
+
+    GISMO_CLONE_FUNCTION(gsBSpline, virtual)
     
     GISMO_BASIS_ACCESSORS    
     
@@ -235,10 +233,10 @@ public:
             gsBoehm( this->basis().knots(), this->coefs() , knot, i);
     }
 
-    /// Insert the given new knots in the range \a [begin..end)
+    /// Insert the given new knots in the range \a [\em inBegin .. \em inEend )
     /// without changing the curve.
-    /// \param begin iterator pointing to the first knot to be inserted
-    /// \param end iterator pointing to one position after the last
+    /// \param inBegin iterator pointing to the first knot to be inserted
+    /// \param inEnd iterator pointing to one position after the last
     /// knot to be inserted
     template <class It>
     void insertKnots( It inBegin, It inEnd)
@@ -326,13 +324,13 @@ public:
         }
 
     /// Sample \a npoints uniformly distributed (in parameter domain) points on the curve.
-    typename gsMatrix<T>::uPtr sample(int npoints = 50) const
+    gsMatrix<T> sample(int npoints = 50) const
     {      
-        gsMatrix<T> * images = new gsMatrix<T>();
+        gsMatrix<T> images;
         gsMatrix<T> interval = this->parameterRange();
         const gsMatrix<T> pts = gsPointGrid(interval, npoints );
-        this->eval_into( pts, *images );
-        return typename gsMatrix<T>::uPtr(images);
+        this->eval_into( pts, images );
+        return images;
     }
 
     /// Tries to convert the curve into periodic.
@@ -402,7 +400,7 @@ gsBSpline<T> operator*(const gsBSpline<T> & lhs, const gsBSpline<T> & rhs)
 
     gsMatrix<T> pts;
     kv.greville_into(pts);
-    const gsMatrix<T> ev = (*lhs.eval(pts)).array() * (*rhs.eval(pts)).array();
+    const gsMatrix<T> ev = (lhs.eval(pts)).array() * (rhs.eval(pts)).array();
     
     // fixme: avoid temporaries here
     return *safe(static_cast<gsBSpline<T>*>(gsBSplineBasis<T>(kv).interpolateData(ev,pts)));

@@ -97,12 +97,7 @@ int main(int argc, char* argv[])
     cmd.addString("Y", "f2", "The Y-coordinate of the function", func_name_y);
     cmd.addString("Z", "f3", "The Z-coordinate of the function", func_name_z);
 
-    bool OK = cmd.getValues(argc, argv);
-    if (!OK)
-    {
-        gsWarn <<"Incorrect arguments\n";
-        return 0;
-    }
+    cmd.getValues(argc, argv);
 
     // Define a function R^d --> R^2
     gsFunctionExpr<> func(func_name_x, func_name_y, func_name_z, d);
@@ -148,7 +143,7 @@ int main(int argc, char* argv[])
     // Returns a geometry with basis = tBasis 
     // and coefficients being
     // computed as the interpolant of \a funct
-    gsGeometry<> * interpolant = tBasis->interpolateAtAnchors(fValues);
+    gsGeometry<>::uPtr interpolant = tBasis->interpolateAtAnchors(fValues);
 
     gsInfo << "Result :"<< *interpolant <<"\n";
 
@@ -169,7 +164,6 @@ int main(int argc, char* argv[])
     //gsWriteParaview( *interpolant, support, "interpolant", s );
 
     // Cleanup: deleting the raw pointer
-    delete interpolant;
     delete tBasis;
     return 0;
 }

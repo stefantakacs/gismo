@@ -28,11 +28,25 @@ class gsGeometrySlice : public gsFunction<T>
 {
     typedef gsFunction<T> Base;
 public:
+    /// Shared pointer for gsGeometrySlice
+    typedef memory::shared_ptr< gsGeometrySlice > Ptr;
+
+    /// Unique pointer for gsGeometrySlice
+    typedef memory::unique_ptr< gsGeometrySlice > uPtr;
+
     gsGeometrySlice(const gsFunction<T>* geo, index_t fixed_dir,T par)
     : m_geo(geo),m_fixed_dir(fixed_dir),m_par(par)
     {
         GISMO_ASSERT(fixed_dir>=0 && geo->domainDim()>static_cast<int>(fixed_dir),"Geometry has not big enough dimension to fix the given fixed_dim.");
         GISMO_ASSERT(geo->domainDim()!=1,"Cannot take a slice of a curve.");
+    }
+
+    /// Copyconstructor for new gsGeometrySlice(*this)
+    gsGeometrySlice(const gsGeometrySlice* geoSlice)
+        : m_geo(geoSlice->m_geo),m_fixed_dir(geoSlice->m_fixed_dir),m_par(geoSlice->m_par)
+    {
+        GISMO_ASSERT(geoSlice->m_fixed_dir>=0 && geoSlice->m_geo->domainDim()>static_cast<int>(geoSlice->m_fixed_dir),"Geometry has not big enough dimension to fix the given fixed_dim.");
+        GISMO_ASSERT(geoSlice->m_geo->domainDim()!=1,"Cannot take a slice of a curve.");
     }
 
     /// \brief Gives back the domain dimension of this slice
@@ -51,11 +65,7 @@ public:
         return m_geo->targetDim();
     }
 
-    /// Clone function. Makes a deep copy of the geometry object.
-    gsGeometrySlice * clone() const
-    {
-        return new gsGeometrySlice(m_geo,m_fixed_dir,m_par);
-    }
+    GISMO_CLONE_FUNCTION(gsGeometrySlice)
 
     /// \brief Gives back the values of this slice at points \a u in \a result
     void eval_into(const gsMatrix<T>& u, gsMatrix<T>& result) const

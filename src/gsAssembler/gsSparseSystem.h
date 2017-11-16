@@ -9,7 +9,7 @@
     License, v. 2.0. If a copy of the MPL was not distributed with this
     file, You can obtain one at http://mozilla.org/MPL/2.0/.
     
-    Author(s): A. Mantzaflaris, C. Hofer
+    Author(s): A. Mantzaflaris, C. Hofer, K. Rafetseder
 */
 
 #pragma once
@@ -326,17 +326,17 @@ public:
 
     /**
      * @brief Reserves the memory for the sparse matrix and the rhs,
-     * based on the polynomial degree of the first basis-piece in \
-     * mb, as well as the input options bdA, bdB and bdO
+     * based on the polynomial degree of the first basis-piece in
+     * /em mb, as well as the input options bdA, bdB and bdO
      *
      * At each column approximately bdA * deg + dbB non-zero entries
      * are expected. An extra amount of memory of bdO percent is
      * allocated, in order to speedup the process.
-     *
+     * @param mb
+     * @param opt
      * @param [in] numRhs number of columns
-     *
      */
-    void reserve(const gsMultiBasis<T> & mb, const gsOptionList & opt, 
+    void reserve(const gsMultiBasis<T> & mb, const gsOptionList & opt,
                  const index_t numRhs)
     {
         reserve(numColNz(mb,opt), numRhs);
@@ -713,7 +713,6 @@ public: /* Add local contributions to system matrix */
      *       3) no assembling is done for the rhs
      * @param[in] localMat the local matrix
      * @param[in] actives the mapped index of basis functions, without shifts!
-     * @param[in] eliminatedDofs the values for the dofs, which are removed from the system
      * @param[in] r the row block
      * @param[in] c the column block
      */
@@ -744,8 +743,8 @@ public: /* Add local contributions to system matrix */
 
 
     /**
-     * @brief pushToMatrix pushes the local matrix for an element to the global system,
-     * Note: 1) the different index sets are used for row and column block
+     * @brief pushToMatrixAllFree pushes the local matrix for an element to the global system,
+     * Note: 1) different index sets are used for row and column block
      *       2) no checks are done if an index is eliminated or not
      *       3) no assembling is done for the rhs
      * @param[in] localMat the local matrix
@@ -776,6 +775,76 @@ public: /* Add local contributions to system matrix */
                     m_matrix.coeffRef(ii, jj) += localMat(i, j);
             }
         }
+    }
+
+    /**
+     * @brief pushToMatrix pushes one local matrix consisting of several blocks corresponding to blocks of the global system
+     * Note: 1) Usefull for bilinear forms depending on vector valued functions
+     *       2) different index sets are used for row and column blocks
+     *       3) eliminated dofs are incorporated in the right way
+     *       4) assume identical row and column mappers for the global system, therefore only one vector of mapped index sets is given
+     * @param[in] localMat local system matrix
+     * @param[in] actives_vec a vector of mapped index sets (for ALL blocks of the global system), accessed via \a actives_vec[\a r_vec(i)]
+     * @param[in] eliminatedDofs a vector of values for the dofs (corresponding to the columns) that are eliminated from the system
+     *            (for ALL blocks of the global system), accessed via \a eliminatedDofs[\a r_vec(i)]
+     * @param[in] r_vec a vector of row block indices to which the local matrix is pushed
+     * @param[in] c_vec a vector of column block indices to which the local matrix is pushed
+     */
+    void pushToMatrix(const gsMatrix<T> & localMat,
+                      const std::vector<gsMatrix<unsigned> >& actives_vec,
+                      const std::vector<gsMatrix<T> > & eliminatedDofs,
+                      const gsVector<size_t> & r_vec,
+                      const gsVector<size_t> & c_vec)
+    {
+        int rstrLocal = 0;
+        int cstrLocal = 0;
+
+        for (index_t r_ind = 0; r_ind != r_vec.size(); ++r_ind) // for row-blocks
+        {
+            size_t r = r_vec(r_ind);
+            const gsDofMapper & rowMap    = m_mappers[m_row.at(r)];
+            const index_t numActive_i = actives_vec[r].rows();
+
+            for (index_t c_ind = 0; c_ind != c_vec.size(); ++c_ind) // for col-blocks
+            {
+                size_t c = c_vec(c_ind);
+                const gsDofMapper & colMap    = m_mappers[m_col.at(c)];
+                const index_t numActive_j = actives_vec[c].rows();
+                const gsMatrix<T> & eliminatedDofs_j = eliminatedDofs[c];
+
+                for (index_t i = 0; i != numActive_i; ++i) // N_i
+                {
+                    const int ii =  m_rstr.at(r) + actives_vec[r].at(i); // row index global matrix
+                    const int iiLocal = rstrLocal + i;                   // row index local matrix
+
+                    if ( rowMap.is_free_index(actives_vec[r].at(i)) )
+                    {
+
+                        for (index_t j = 0; j != numActive_j; ++j) // N_j
+                        {
+                            const int jj =  m_cstr.at(c) + actives_vec[c].at(j); // column index global matrix
+                            const int jjLocal = cstrLocal + j;                   // column index local matrix
+
+                            if ( colMap.is_free_index(actives_vec[c].at(j)) )
+                            {
+                                // If matrix is symmetric, we store only lower
+                                // triangular part
+                                if ( (!symm) || jj <= ii )
+                                    m_matrix.coeffRef(ii, jj) += localMat(iiLocal, jjLocal);
+                            }
+                            else // Fixed DoF
+                            {
+                                m_rhs.row(ii).noalias() -= localMat(iiLocal, jjLocal) * eliminatedDofs_j.row( colMap.global_to_bindex(actives_vec[c].at(j)));
+                            }
+                        }
+                    }
+                }
+                cstrLocal += numActive_j;
+            }
+            cstrLocal = 0;
+            rstrLocal += numActive_i;
+        }
+
     }
 
 
@@ -814,8 +883,8 @@ public: /* Add local contributions to system right-hand side */
      * @param[in] r the row block associated to
      */
     void pushToRhsAllFree(const gsMatrix<T> & localRhs,
-                   const gsMatrix<unsigned> & actives,
-                   const size_t r = 0)
+                          const gsMatrix<unsigned> & actives,
+                          const size_t r = 0)
     {
         const index_t    numActive = actives.rows();
 
@@ -824,6 +893,43 @@ public: /* Add local contributions to system right-hand side */
             const int ii =  m_rstr.at(r) + actives.at(i);
             m_rhs.row(ii) += localRhs.row(i);
         }
+    }
+
+
+    /**
+     * @brief pushToRhs pushes one local rhs consisting of several blocks corresponding to blocks of the global system
+     * Note: 1) Usefull for rhs depending on a vector valued function
+     * @param[in] localRhs local system matrix
+     * @param[in] actives_vec a vector of mapped index sets (for ALL row blocks of the global system), accessed via \a actives_vec[\a r_vec(i)]
+     * @param[in] r_vec a vector of row block indices to which the local matrix is pushed
+     */
+
+    void pushToRhs(const gsMatrix<T> & localRhs,
+                   const std::vector<gsMatrix<unsigned> >& actives_vec,
+                   const gsVector<size_t> & r_vec)
+    {
+        int rstrLocal = 0;
+
+        for (index_t r_ind = 0; r_ind != r_vec.size(); ++r_ind) // for row-blocks
+        {
+            size_t r = r_vec(r_ind);
+            const gsDofMapper & rowMap    = m_mappers[m_row.at(r)];
+            const index_t numActive_i = actives_vec[r].rows();
+
+
+            for (index_t i = 0; i != numActive_i; ++i) // N_i
+            {
+                const int ii =  m_rstr.at(r) + actives_vec[r].at(i); // row index global matrix
+                const int iiLocal = rstrLocal + i;                   // row index local matrix
+
+                if ( rowMap.is_free_index(actives_vec[r].at(i)) )
+                {
+                    m_rhs.row(ii) += localRhs.row(iiLocal);
+                }
+            }
+            rstrLocal += numActive_i;
+        }
+
     }
 
 public: /* Add local contributions to system matrix and right-hand side */
@@ -969,6 +1075,84 @@ public: /* Add local contributions to system matrix and right-hand side */
         }
     }
 
+
+    /**
+     * @brief pushToMatrix pushes one local matrix and rhs consisting of several blocks corresponding to blocks of the global system
+     * Note: 1) Usefull for bilinear forms depending on vector valued functions
+     *       2) different index sets are used for row and column blocks
+     *       3) eliminated dofs are incorporated in the right way
+     *       4) assume identical row and column mappers for the global system, therefore only one vector of mapped index sets is given
+     * @param[in] localMat local system matrix
+     * @param[in] localRhs local rhs vector
+     * @param[in] actives_vec a vector of mapped index sets (for ALL blocks of the global system), accessed via \a actives_vec[\a r_vec(i)]
+     * @param[in] eliminatedDofs a vector of values for the dofs (corresponding to the columns) that are eliminated from the system
+     *            (for ALL blocks of the global system), accessed via \a eliminatedDofs[\a r_vec(i)]
+     * @param[in] r_vec a vector of row block indices to which the local matrix is pushed
+     * @param[in] c_vec a vector of column block indices to which the local matrix is pushed
+     */
+
+    void push(const gsMatrix<T> & localMat,
+              const gsMatrix<T> & localRhs,
+              const std::vector<gsMatrix<unsigned> >& actives_vec,
+              const std::vector<gsMatrix<T> > & eliminatedDofs,
+              const gsVector<size_t> & r_vec,
+              const gsVector<size_t> & c_vec)
+    {
+        int rstrLocal = 0;
+        int cstrLocal = 0;
+
+        for (index_t r_ind = 0; r_ind != r_vec.size(); ++r_ind) // for row-blocks
+        {
+            size_t r = r_vec(r_ind);
+            const gsDofMapper & rowMap    = m_mappers[m_row.at(r)];
+            const index_t numActive_i = actives_vec[r].rows();
+
+            for (index_t c_ind = 0; c_ind != c_vec.size(); ++c_ind) // for col-blocks
+            {
+                size_t c = c_vec(c_ind);
+                const gsDofMapper & colMap    = m_mappers[m_col.at(c)];
+                const index_t numActive_j = actives_vec[c].rows();
+                const gsMatrix<T> & eliminatedDofs_j = eliminatedDofs[c];
+
+                for (index_t i = 0; i != numActive_i; ++i) // N_i
+                {
+                    const int ii =  m_rstr.at(r) + actives_vec[r].at(i); // row index global matrix
+                    const int iiLocal = rstrLocal + i;                   // row index local matrix
+
+                    if ( rowMap.is_free_index(actives_vec[r].at(i)) )
+                    {
+                        // rhs should not be pushed for each col-block (but only once)
+                        if(c_ind == 0)
+                            m_rhs.row(ii) += localRhs.row(iiLocal);
+
+                        for (index_t j = 0; j != numActive_j; ++j) // N_j
+                        {
+                            const int jj =  m_cstr.at(c) + actives_vec[c].at(j); // column index global matrix
+                            const int jjLocal = cstrLocal + j;                   // column index local matrix
+
+                            if ( colMap.is_free_index(actives_vec[c].at(j)) )
+                            {
+                                // If matrix is symmetric, we store only lower
+                                // triangular part
+                                if ( (!symm) || jj <= ii )
+                                    m_matrix.coeffRef(ii, jj) += localMat(iiLocal, jjLocal);
+                            }
+                            else // Fixed DoF
+                            {
+                                m_rhs.row(ii).noalias() -= localMat(iiLocal, jjLocal) * eliminatedDofs_j.row( colMap.global_to_bindex(actives_vec[c].at(j)));
+                            }
+                        }
+                    }
+                }
+                cstrLocal += numActive_j;
+            }
+            cstrLocal = 0;
+            rstrLocal += numActive_i;
+        }
+
+    }
+
+
     // AM: incomplete, not working yet
     /**
      * @brief push pushes one local system matrix and one local rhs for an element to
@@ -1039,8 +1223,7 @@ public: /* Add local contributions to system matrix and right-hand side */
      * @param[in] localMat a vector local system matrices
      * @param[in] localRhs a vector local rhs vector/matrices
      * @param[in] actives a vector of index sets (one per block)
-     * @param[in] eliminatedDofs a vector of values for the dofs (corresponding to the columns), which are
-     *           removed from the system, (one per block)
+     * @param[in] fixedDofs
      * @param[in] r the row blocks where the matrices should be pushed
      * @param[in] c the colum blocks where the matrices shouldbe pushed
      */
@@ -1054,9 +1237,6 @@ public: /* Add local contributions to system matrix and right-hand side */
     }
 
 
-
-
-
     GISMO_DEPRECATED
     /**
      * @brief pushToMatrix pushes the local matrix for an element to the global system,
@@ -1067,7 +1247,6 @@ public: /* Add local contributions to system matrix and right-hand side */
      *
      * @param[in] localMat the local matrix
      * @param[in] actives the mapped index of basis functions, without shifts!
-     * @param[in] eliminatedDofs the values for the dofs, which are removed from the system
      * @param[in] r the row block
      * @param[in] c the column block
      */
@@ -1109,8 +1288,6 @@ public: /* Add local contributions to system matrix and right-hand side */
      * @param[in] localMat the local matrix
      * @param[in] actives_i the mapped index of row - basis functions, without shifts!
      * @param[in] actives_j the mapped index of column - basis functions, without shifts!
-     * @param[in] eliminatedDofs_j the values for the dofs (corresponding to the columns), which are
-     *            removed from the system
      * @param[in] r the row block
      * @param[in] c the column block
      */
@@ -1191,7 +1368,49 @@ public: /* Add local contributions to system matrix and right-hand side */
     }
 
 
+public:
+    void pushSparse(const gsSparseMatrix<T> & localMat,
+                    const gsMatrix<T> & localRhs,
+                    const gsMatrix<unsigned> & actives_i,
+                    const gsMatrix<unsigned> & actives_j,
+                    const gsMatrix<T> & eliminatedDofs_j,
+                    const size_t r = 0, const size_t c = 0)
+    {
+        const gsDofMapper & rowMap = m_mappers[m_row.at(r)];
+        const gsDofMapper & colMap = m_mappers[m_col.at(c)];
 
+        GISMO_ASSERT( m_matrix.cols() == m_rhs.rows(), "gsSparseSystem is not allocated");
+        //Assert eliminatedDofs.rows() == rowMap.boundarySize()
+
+        for (index_t i = 0; i<localMat.outerSize(); ++i)
+            for (typename gsSparseMatrix<T>::iterator it(localMat,i); it; ++it)
+            {
+                const int ii =  m_rstr.at(r) + actives_i.at(it.row());
+                if ( rowMap.is_free_index(actives_i.at(it.row())) )
+                {
+                    const int jj =  m_cstr.at(c) + actives_j.at(it.col());
+                    if ( colMap.is_free_index(actives_j.at(it.col())) )
+                    {
+                        // If matrix is symmetric, we store only lower
+                        // triangular part
+                        if ( (!symm) || jj <= ii )
+                            m_matrix.coeffRef(ii, jj) += it.value();
+                    }
+                    else // if ( mapper.is_boundary_index(jj) ) // Fixed DoF?
+                    {
+                        m_rhs.row(ii).noalias() -= it.value() *
+                                eliminatedDofs_j.row( colMap.global_to_bindex(jj) );
+                    }
+                }
+            }
+
+        for(index_t i=0; i<actives_i.rows();++i)
+        {
+            const int ii =  m_rstr.at(r) + actives_i.at(i);
+            if ( rowMap.is_free_index(actives_i.at(i)) )
+                m_rhs.row(ii) += localRhs.row(i);
+        }
+    }
 
 };  // class gsSparseSystem
 

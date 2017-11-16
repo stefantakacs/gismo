@@ -82,6 +82,12 @@ public:
         m_data.getAnyFirst(result);
     }
 
+    gsReadFile(std::string const & fn, gsMultiPatch<T> & result)
+    : m_id(-1)
+    { 
+        m_data.read(fn);
+        result = this->operator gsMultiPatch<T>();
+    }
 
     ~gsReadFile() { m_data.clear(); }
    
@@ -176,7 +182,7 @@ public:
         // Else get all geometries and make a multipatch out of that
         if ( this->m_data.template has< gsGeometry<T> >() )
         {
-            std::vector< typename gsGeometry<T>::uPtr > patches = 
+            std::vector< memory::unique_ptr<gsGeometry<T> > > patches = 
                 this->m_data.template getAll< gsGeometry<T> >();
             std::vector< gsGeometry<T>* > releasedPatches = memory::release(patches);
             return memory::make_unique(new gsMultiPatch<T>( releasedPatches ));
@@ -189,9 +195,10 @@ public:
     /// Allows to convert a gsReadFile to a gsMultipatch
     operator gsMultiPatch<T> ()
     {
-        memory::unique_ptr< gsMultiPatch<T> > mp = *this;
+        memory::unique_ptr< gsMultiPatch<T> > mp = 
+            this->operator memory::unique_ptr< gsMultiPatch<T> >();
         if (!mp) return gsMultiPatch<T>();
-        return *mp;
+        return give(*mp);
     }
     
     /// Allows to read a gsMesh

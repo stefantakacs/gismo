@@ -76,6 +76,7 @@ public:
     typedef gsBSplineBasis<T> Self_t;
 
     typedef gsTensorBSplineBasis TensorSelf_t;
+    typedef gsTensorBSplineBasis<1,T> TensorSelf_tt;
 
     /// Coefficient type
     typedef T Scalar_t;
@@ -89,19 +90,19 @@ public:
     /// Dimension of the parameter domain
     static const int Dim = 1;
 
-    /// Shared pointer for gsTensorBSplineBasis
+    /// Smart pointer for gsTensorBSplineBasis
     typedef memory::shared_ptr< Self_t > Ptr;
 
+    /// Smart pointer for gsTensorBSplineBasis
     typedef memory::unique_ptr< Self_t > uPtr;
-
-    static Ptr makeShared ( const KnotVectorType & KV )
-    { return Ptr( new Self_t(KV) ); }
   
 public:
 
     // Look at gsBasis class for a description
     // Note: Specializing pointer type at return
-    TensorSelf_t * clone() const = 0;
+    //GISMO_CLONE_FUNCTION_FORWARD(TensorSelf_tt)
+    private: virtual gsTensorBSplineBasis * doClone() const = 0;
+    public: uPtr clone() const { return uPtr(dynamic_cast<Self_t*>(doClone())); }
     
     // gsTensorBSplineBasis( const Base & o)
     // { 
@@ -123,6 +124,21 @@ public:
         return new Self_t(*bb.front());
     }
 
+    static uPtr make(std::vector<gsBasis<T>*> & bb )
+    {
+        return uPtr(New(bb));
+    }
+
+    static uPtr make(std::vector<Self_t*> & bb )
+    { 
+        return uPtr(new Self_t(*bb.front()));
+    }
+
+    static uPtr make( const KnotVectorType & KV )
+    {
+        return uPtr(new Self_t(KV));
+    }
+    
     // Note: these casts can be dangerous
     // operator Self_t &() { return dynamic_cast<Self_t&>(*this);}
     // operator const Self_t &() const { return dynamic_cast<const Self_t&>(*this);}
@@ -247,7 +263,7 @@ public:
     gsMatrix<T> * laplacian(const gsMatrix<T> & u ) const ;
 
     // Look at gsBasis class for a description
-    gsBasis<T> * tensorize(const gsBasis<T> & other) const;
+    typename gsBasis<T>::uPtr tensorize(const gsBasis<T> & other) const;
     
     /// Check the BSplineBasis for consistency
     bool check() const
@@ -399,7 +415,9 @@ public:
     void refine_withTransfer(gsSparseMatrix<T,RowMajor> & transfer, 
                              const std::vector<std::vector<T> >& knots)
     {
-        GISMO_NO_IMPLEMENTATION
+        GISMO_ASSERT(knots.size()==1, "the knots you want to insert do not have the right dimension");
+        refine_withTransfer(transfer,knots.front());
+        //GISMO_NO_IMPLEMENTATION
     }
 
     /// \brief Increases the degree without adjusting the smoothness at inner
@@ -724,7 +742,7 @@ public:
 */
 
     // Look at gsBasis class for a description
-    gsBSplineBasis * clone() const;
+    GISMO_CLONE_FUNCTION(gsBSplineBasis)
 
     // Look at gsBasis class for a description
     Self_t & component(unsigned i);
@@ -732,7 +750,7 @@ public:
     // Look at gsBasis class for a description
     const Self_t & component(unsigned i) const;
 
-    gsGeometry<T> * makeGeometry( gsMatrix<T> coefs ) const;
+    memory::unique_ptr<gsGeometry<T> > makeGeometry( gsMatrix<T> coefs ) const;
             
 private:
     

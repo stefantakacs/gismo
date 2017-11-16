@@ -32,8 +32,7 @@ namespace gismo
     \ingroup Nurbs
 */
 template<unsigned d, class T>
-class gsTensorNurbsBasis : 
-        public gsRationalBasis<typename gsBSplineTraits<d,T>::Basis>
+class gsTensorNurbsBasis : public gsRationalBasis<typename gsBSplineTraits<d,T>::Basis>
 {
 
 public: 
@@ -60,7 +59,11 @@ public:
     /// Associated Boundary basis type
     typedef typename gsBSplineTraits<d-1,T>::RatBasis BoundaryBasisType;
 
+    /// Shared pointer for gsTensorNurbsBasis
     typedef memory::shared_ptr< gsTensorNurbsBasis > Ptr;
+
+    /// Unique pointer for gsTensorNurbsBasis
+    typedef memory::unique_ptr< gsTensorNurbsBasis > uPtr;
     
     //typedef typename Base::iterator iterator;
     //typedef typename Base::const_iterator const_iterator;
@@ -98,9 +101,7 @@ public:
 
     gsTensorNurbsBasis(const gsTensorNurbsBasis & o) : Base(o) { }
 
-    /// Clone function. Used to make a copy of the object
-    gsTensorNurbsBasis * clone() const
-    { return new gsTensorNurbsBasis(*this); }
+    GISMO_CLONE_FUNCTION(gsTensorNurbsBasis)
   
     GISMO_MAKE_GEOMETRY_NEW
 

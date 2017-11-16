@@ -63,10 +63,7 @@ public:
     //gsBoxTopology(const gsBoxTopology & other) : dim(other.dim), nboxes(other.nboxes), 
     //    m_boundary(other.m_boundary), m_interfaces(other.m_interfaces)
     // { }
-
-    ~gsBoxTopology()
-    { }
-
+    
     /// Clone function. Used to make a copy of the object
     gsBoxTopology * clone() const
     {
@@ -221,13 +218,12 @@ public:
     bool isInterface(const patchSide& ps) const;
 
     /// Return the vector of boundaries.
-    std::vector< patchSide > boundaries() const { return m_boundary;}
-
-    /// Return the vector of boundaries.
-    std::vector< patchSide >& boundaries() { return m_boundary;}
+    const std::vector<patchSide> & boundaries() const { return m_boundary;}
+    std::vector<patchSide> & boundaries() { return m_boundary;}
 
     /// Return the vector of interfaces.
-    std::vector< boundaryInterface > interfaces() const { return m_interfaces; }
+    const std::vector<boundaryInterface> & interfaces() const { return m_interfaces; }
+    std::vector<boundaryInterface> & interfaces() { return m_interfaces; }
 
     /// Check that boundaries and interfaces are consistent.
     void checkConsistency() const;

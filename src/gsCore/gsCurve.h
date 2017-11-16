@@ -30,9 +30,11 @@ template<class T>
 class gsCurve : public gsGeometry<T>
 {
     
-public: 
+public:
     /// Shared pointer for gsCurve
     typedef memory::shared_ptr< gsCurve > Ptr;
+
+    /// Unique pointer for gsCurve
     typedef memory::unique_ptr< gsCurve > uPtr;
     
     typedef T Scalar_t;
@@ -55,7 +57,9 @@ public:
 
     /// @}
 
-    virtual gsCurve * clone() const = 0;
+    //GISMO_CLONE_FUNCTION_FORWARD(gsCurve)
+private: virtual gsCurve * doClone() const = 0;
+public: inline uPtr clone() const { return uPtr(doClone()); }
 
     int domainDim() const { return 1; }
     

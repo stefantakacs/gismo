@@ -15,9 +15,9 @@
 
 #include <gsCore/gsFunctionSet.h>
 
-#define GISMO_MAKE_GEOMETRY_NEW                                         \
-    virtual gsGeometry<T> * makeGeometry( gsMatrix<T>coefs ) const      \
-    { return new GeometryType(*this, give(coefs)); }
+#define GISMO_MAKE_GEOMETRY_NEW    \
+virtual memory::unique_ptr<gsGeometry<T> > makeGeometry( gsMatrix<T>coefs ) const      \
+    { return memory::unique_ptr<gsGeometry<T> >(new GeometryType(*this, give(coefs))); }
 
 namespace gismo
 {
@@ -91,8 +91,6 @@ public:
 
     static const bool IsRational = false;
 
-    typedef typename gsMatrix<T>::uPtr        uMatrixPtr;
-
     typedef memory::unique_ptr< gsDomainIterator<T> > domainIter;
 
 public:
@@ -126,27 +124,27 @@ public:
     /// @{
 
     /// Evaluate a single basis function \a i at points \a u.
-    uMatrixPtr evalSingle(unsigned i, const gsMatrix<T> & u) const
+    gsMatrix<T> evalSingle(unsigned i, const gsMatrix<T> & u) const
     {
-        gsMatrix<T> * result = new gsMatrix<T>;
-        this->evalSingle_into(i, u, *result);
-        return uMatrixPtr(result);
+        gsMatrix<T> result;
+        this->evalSingle_into(i, u, result);
+        return result;
     }
 
     /// Evaluate a single basis function \a i derivative at points \a u.
-    uMatrixPtr derivSingle(unsigned i, const gsMatrix<T> & u) const
+    gsMatrix<T> derivSingle(unsigned i, const gsMatrix<T> & u) const
     {
-        gsMatrix<T> *result = new gsMatrix<T>;
-        this->derivSingle_into(i, u, *result);
-        return uMatrixPtr(result);
+        gsMatrix<T> result;
+        this->derivSingle_into(i, u, result);
+        return result;
     }
 
     /// Evaluate the second derivative of a single basis function \a i at points \a u.
-    uMatrixPtr deriv2Single(unsigned i, const gsMatrix<T> & u) const
+    gsMatrix<T> deriv2Single(unsigned i, const gsMatrix<T> & u) const
     {
-        gsMatrix<T> * result = new gsMatrix<T>;
-        this->deriv2Single_into(i, u, *result);
-        return uMatrixPtr(result);
+        gsMatrix<T> result;
+        this->deriv2Single_into(i, u, result);
+        return result;
     }
 
     /** \brief Number of active basis functions at an arbitrary parameter value.
@@ -188,11 +186,11 @@ public:
      * \return      a matrix of size <em>n x m</em> with one function value as a column vector
      *              per evaluation point
      */
-    uMatrixPtr evalFunc(const gsMatrix<T> & u, const gsMatrix<T> & coefs) const
+    gsMatrix<T> evalFunc(const gsMatrix<T> & u, const gsMatrix<T> & coefs) const
     {
-        gsMatrix<T> * result = new gsMatrix<T>;
-        this->evalFunc_into(u, coefs, *result);
-        return uMatrixPtr(result);
+        gsMatrix<T> result;
+        this->evalFunc_into(u, coefs, result);
+        return result;
     }
 
     /** \brief Evaluate the function described by \a coefs at points \a u,
@@ -219,11 +217,11 @@ public:
      *   one Jacobian matrix of size <em>d * n</em>, such that the total size of
      *   the result is <em>n x (d * n) x N</em>
      */
-    uMatrixPtr derivFunc(const gsMatrix<T> & u, const gsMatrix<T> & coefs) const
+    gsMatrix<T> derivFunc(const gsMatrix<T> & u, const gsMatrix<T> & coefs) const
     {
-        gsMatrix<T> * result = new gsMatrix<T>;
-        this->derivFunc_into(u, coefs, *result);
-        return uMatrixPtr(result);
+        gsMatrix<T> result;
+        this->derivFunc_into(u, coefs, result);
+        return result;
     }
 
     /** \brief Evaluate the derivatives of the function described by \a coefs at points \a u.
@@ -311,11 +309,11 @@ public:
      */
     //  second derivatives as follows (eg. for a surface (x,y) --> (f_1, f_2, f_3):
     //     *   ( dxxf_1 dyyf_1 dxyf_1 dxxf_2 dyyf_2 dxy2f_2 dxxf_3 dyyf_3 dxyf_3 )^T
-    uMatrixPtr deriv2Func(const gsMatrix<T> & u, const gsMatrix<T> & coefs) const
+    gsMatrix<T> deriv2Func(const gsMatrix<T> & u, const gsMatrix<T> & coefs) const
     {
-        gsMatrix<T> *result = new gsMatrix<T>;
-        this->deriv2Func_into(u, coefs, *result);
-        return uMatrixPtr(result);
+        gsMatrix<T> result;
+        this->deriv2Func_into(u, coefs, result);
+        return result;
     }
 
     /** \brief Evaluates the second derivatives of the function described by \a coefs at points \a u.
@@ -382,6 +380,7 @@ public:
      *
      * @param[in] u
      * @param[in] coefs
+     * @param[in] n
      * @param[out] result
      */
     virtual void evalAllDersFunc_into(const gsMatrix<T> & u,
@@ -670,19 +669,18 @@ public:
 
     /// @}
 
-    /// @brief Clone this basis, making a deep copy.
-    virtual gsBasis * clone() const = 0;
+    GISMO_CLONE_FUNCTION_FORWARD(gsBasis)
 
     /// @brief Create a gsGeometry of proper type for this basis with the
     /// given coefficient matrix.
-    virtual gsGeometry<T> * makeGeometry(gsMatrix<T> coefs) const = 0;
+    virtual memory::unique_ptr<gsGeometry<T> > makeGeometry(gsMatrix<T> coefs) const = 0;
 
     /// @brief Create an empty basis of the derived type and return a
     /// pointer to it
-    virtual gsBasis * create() const;
+    virtual typename gsBasis::uPtr create() const;
 
     /// Return a tensor basis of \a this and \a other
-    virtual gsBasis * tensorize(const gsBasis & other) const;
+    virtual typename gsBasis::uPtr tensorize(const gsBasis & other) const;
 
     /// Applicable for rational bases: returns the underlying "source"
     /// (non-rational) basis
@@ -694,7 +692,7 @@ public:
 
     /// Clone the source of this basis in case of rational basis, same
     /// as clone() otherwise
-    virtual gsBasis<T> * makeNonRational() const { return clone(); }
+    virtual gsBasis<T> * makeNonRational() const { return clone().release(); }
 
     /// @brief Create a domain iterator for the computational mesh of
     /// this basis, that points to the first element of the domain
@@ -793,7 +791,7 @@ public:
     /// @brief Elevate the degree of the basis by the given amount, preserve smoothness.
     virtual void degreeElevate(int const & i = 1, int const dir = -1);
 
-    /// @brief Reduce the degree of the basis by the given amount.
+    /// @brief Reduce the degree of the basis by the given amount, preserve smoothness.
     virtual void degreeReduce(int const & i = 1);
 
     /// @brief Elevate the degree of the basis by the given amount, preserve knots multiplicity.
@@ -803,8 +801,12 @@ public:
     virtual void degreeDecrease(int const & i = 1, int const dir = -1); 
 
     /// @brief Set the degree of the basis (either elevate or
-    /// reduce)e in order to have degree equal to \a i
+    /// reduce) in order to have degree equal to \a i
     void setDegree(int const& i);
+    
+    /// @brief Set the degree of the basis (either increase or
+    /// decrecee) in order to have degree equal to \a i
+    void setDegreePreservingMultiplicity(int const& i);
 
     /// @brief Reduces the continuity of the basis along element boundaries
     virtual void reduceContinuity(int const & i = 1);
@@ -833,14 +835,14 @@ public:
 
     /// @brief Applies interpolation given the parameter values \a pts
     /// and values \a vals.
-    gsGeometry<T> * interpolateData(gsMatrix<T> const& vals,
+    memory::unique_ptr<gsGeometry<T> > interpolateData(gsMatrix<T> const& vals,
                                     gsMatrix<T> const& pts ) const;
 
     /// @brief Applies interpolation of values \a pts using the
     /// anchors as parameter points.  May be reimplemented in derived
     /// classes with more efficient algorithms. (by default uses
     /// interpolateData(pts,vals)
-    virtual gsGeometry<T> * interpolateAtAnchors(gsMatrix<T> const& vals) const;
+    virtual memory::unique_ptr<gsGeometry<T> > interpolateAtAnchors(gsMatrix<T> const& vals) const;
     
     //gsGeometry<T> * projectL2(gsFunction<T> const & func) const;
 

@@ -130,7 +130,7 @@ gsCurve<T> * gsCurveLoop<T>::singleCurve() const
     GISMO_ASSERT( m_curves.size(), "CurveLoop is empty.\n");
     GISMO_ASSERT( m_curves.front(), "Something went wrong. Invalid pointer in gsCurveLoop member.\n");
     
-    gsCurve<T> * loop = m_curves.front()->clone() ;
+    gsCurve<T> * loop = m_curves.front()->clone().release() ;   // TODO: return uPtr
     
     for ( it= m_curves.begin()+1; it!= m_curves.end() ; it++ )
     {
@@ -589,7 +589,7 @@ bool gsCurveLoop<T>::initFrom3DByAngles(const std::vector<T>& angles3D, const st
     std::vector<T> signedAngles(n);
     for(size_t i = 0; i < n; i++)
     {
-        signedAngles[i] = (isConvex[i]? angles3D[i]: -angles3D[i]);
+        signedAngles[i] = (isConvex[i]? 1: -1) * angles3D[i];
     }
     
     gsMatrix<T> corners;

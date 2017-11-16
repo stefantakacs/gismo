@@ -27,7 +27,7 @@ template<class T>
 gsMultiPatch<T>::gsMultiPatch(const gsGeometry<T> & geo )
     : gsBoxTopology( geo.parDim() )
 {
-    m_patches.push_back( geo.clone() );
+    m_patches.push_back(geo.clone().release());
     //m_patches[0]->setId(0); // Note: for the single-patch constructor the id remains unchanged
     addBox();
     this->addAutoBoundaries();
@@ -39,7 +39,7 @@ gsMultiPatch<T>::gsMultiPatch( const gsMultiPatch& other )
 {
     // clone all geometries
     cloneAll( other.m_patches.begin(), other.m_patches.end(),
-              this->m_patches.begin() );
+              this->m_patches.begin());
 }
 
 template<class T>
@@ -138,7 +138,7 @@ std::vector<gsBasis<T> *> gsMultiPatch<T>::basesCopy() const
     for ( const_iterator it = m_patches.begin();
           it != m_patches.end(); ++it ) 
     {
-        bb.push_back( ( *it )->basis().clone() );
+        bb.push_back( (*it)->basis().clone().release() );
     }
     return bb ;
 }
@@ -167,13 +167,13 @@ void gsMultiPatch<T>::addPatch( gsGeometry<T>* g )
 }
 
 template<class T>
-void gsMultiPatch<T>::addPatch(typename gsGeometry<T>::uPtr g) 
+void gsMultiPatch<T>::addPatch(typename gsGeometry<T>::uPtr g)
 {
     addPatch(g.release());
 }
 
 template<class T>
-void gsMultiPatch<T>::addPatch(const gsGeometry<T> & g) 
+inline void gsMultiPatch<T>::addPatch(const gsGeometry<T> & g)
 {
     addPatch(g.clone());
 }

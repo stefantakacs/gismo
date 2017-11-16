@@ -13,6 +13,7 @@
 
 */
 
+#include <gsCore/gsBasis.h>
 #include <gsCore/gsGeometry.h>
 #include <gsCore/gsLinearAlgebra.h>
 #include <gsTensor/gsTensorDomainIterator.h>
@@ -99,7 +100,7 @@ void gsFitting<T>::compute(T lambda)
     //x=A_mat.fullPivHouseholderQr().solve( m_B);
     // Solves for many right hand side  columns
     // finally generate the B-spline curve
-    m_result = m_basis->makeGeometry( give(x) );
+    m_result = m_basis->makeGeometry( give(x) ).release();
 }
 
 

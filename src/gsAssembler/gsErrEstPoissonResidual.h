@@ -203,7 +203,7 @@ protected:
 
         // Evaluate right-hand-side function (defined of physical domain)
         rhsFunction.eval_into(geoEval.values(), m_rhsFctVals);
-    }
+}
 
     // assemble on element
 
@@ -216,9 +216,10 @@ protected:
      * @param[in] geoEval gsGeometryEvaluator as evaluated in evaluate().
      * @param[in] quWeights Quadrature weights \em before transformation the the
      * element, i.e., the sum of the weights should be 1.
+     * @param[in,out] accumulated The accumulated squared estimate. (It's by
+     * implementation the incoming value plus the return value of this function.)
      * @return The \em squared estimate \f$ \eta_K^2 \f$ of local error on
      * element \f$ K \f$.
-
      */
     inline T compute(gsDomainIterator<T>    & element,
                      gsGeometryEvaluator<T> & geoEval,
@@ -245,10 +246,10 @@ protected:
             const T weight = quWeights[k] * geoEval.measure(k);
 
             //const typename gsMatrix<T>::constColumns J = geoEval.jacobian(k);
-            gsMatrix<T> sol_der2 = m_discSol2ndDer.col(k);
+            gsMatrix<T> sol_der2 = m_discSol2ndDer.col(k); // not used
             
-            geoEval.transformLaplaceHgrad(k,m_discSolDer, m_discSol2ndDer , m_phLaplace);
-            geoEval.transformGradients(k, m_discSolDer , m_phdiscSolDer);
+            geoEval.transformLaplaceHgrad(k, m_discSolDer, m_discSol2ndDer , m_phLaplace);
+            geoEval.transformGradients(k, m_discSolDer , m_phdiscSolDer); // not used
             sumVolSq += weight * ( m_phLaplace(0,0) + m_rhsFctVals(0,k) ) 
                     * ( m_phLaplace(0,0) + m_rhsFctVals(0,k) );               
 
@@ -347,7 +348,8 @@ protected:
             m_elWiseFull.push_back( tmpStore );
         }
 
-        hhSq = hhSq * sumVolSq + math::sqrt( hhSq ) * sumSidesSq;
+        //hhSq = hhSq * sumVolSq + math::sqrt( hhSq ) * sumSidesSq;
+        hhSq = hhSq * sumVolSq;
         accumulated += hhSq;
         return hhSq;
     }
@@ -627,9 +629,9 @@ private:
 
     gsBoundaryConditions<T> m_bcInfo;
 
-    gsMatrix<T> m_discSol2ndDer,m_discSolDer;
+    gsMatrix<T> m_discSol2ndDer, m_discSolDer;
     gsMatrix<T> m_rhsFctVals;
-    gsMatrix<T> m_phHessVals,m_phLaplace, m_phdiscSolDer;
+    gsMatrix<T> m_phHessVals, m_phLaplace, m_phdiscSolDer;
     unsigned m_parDim;
 
     bool m_f2param;

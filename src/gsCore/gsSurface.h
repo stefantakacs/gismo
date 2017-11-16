@@ -30,10 +30,12 @@ template<class T>
 class gsSurface : public gsGeometry<T>
 {
 
-public: 
-  /// Shared pointer for gsSurface
+public:
+    /// Shared pointer for gsSurface
     typedef memory::shared_ptr< gsSurface > Ptr;
-//  typedef memory::unique_ptr< gsSurface > LocalPtr;
+
+    /// Unique pointer for gsSurface
+    typedef memory::unique_ptr< gsSurface > uPtr;
 
     typedef T Scalar_t;
 public:
@@ -57,7 +59,9 @@ public:
 
     /// @}
 
-    virtual gsSurface * clone() const = 0;
+    //GISMO_CLONE_FUNCTION_FORWARD(gsSurface)
+private: virtual gsSurface * doClone() const = 0; \
+public: inline uPtr clone() const { return uPtr(doClone()); }
 
     int domainDim() const { return 2; }
 

@@ -46,7 +46,10 @@ public:
     util::conditional<d==1, gsConstantBasis<T>, gsHBSplineBasis<d-1,T>
                       >::type BoundaryBasisType;
 
+    /// Shared pointer for gsHBSplineBasis
     typedef memory::shared_ptr< gsHBSplineBasis > Ptr;
+
+    /// Unique pointer for gsHBSplineBasis
     typedef memory::unique_ptr< gsHBSplineBasis > uPtr;
 
 public:
@@ -98,10 +101,9 @@ public:
     void derivSingle_into (unsigned i, const gsMatrix<T> & u, gsMatrix<T>& result) const;
     
     void deriv2Single_into(unsigned i, const gsMatrix<T> & u, gsMatrix<T>& result) const;
-    
-    virtual gsHBSplineBasis* clone() const
-    { return new gsHBSplineBasis(*this); }
-    
+
+    GISMO_CLONE_FUNCTION(gsHBSplineBasis, virtual)
+
     /// Prints the object as a string.
     std::ostream &print(std::ostream &os) const;
     ///returns transfer matrices betweend the levels of the given hierarchical spline

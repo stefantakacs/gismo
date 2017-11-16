@@ -36,6 +36,12 @@ public:
 
     typedef typename gsGeoTraits<d,T>::GeometryBase Base;
 
+    /// Shared pointer for gsGenericGeometry
+    typedef memory::shared_ptr< gsGenericGeometry > Ptr;
+
+    /// Unique pointer for gsGenericGeometry
+    typedef memory::unique_ptr< gsGenericGeometry > uPtr;
+
 public:
     gsGenericGeometry(const gsBasis<T> & basis, 
                       gsMatrix<T> coefs)
@@ -45,8 +51,7 @@ public:
                       "Incoherent basis dimension in gsGenericGeometry");
     }
 
-    gsGenericGeometry * clone() const
-    { return new gsGenericGeometry(*this); }
+    GISMO_CLONE_FUNCTION(gsGenericGeometry)
 
     GISMO_BASIS_ACCESSORS
 

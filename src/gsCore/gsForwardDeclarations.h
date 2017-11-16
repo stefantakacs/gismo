@@ -24,7 +24,7 @@
 
 #include <gsCore/gsConfig.h>
 #include <gsCore/gsDebug.h>
-#include <gsCore/gsExport.h>
+//#include <gsCore/gsExport.h>  // included by gsMemory.h
 #include <gsCore/gsMemory.h>
 #include <gsUtils/gsUtils.h>
 
@@ -177,6 +177,7 @@ template< class T = real_t>  class gsMesh;
 template< class T = real_t>  class gsHeMesh;
 
 template< class T = real_t>  class gsFileData;
+class gsFileManager;
 
 template< class T = real_t>  class gsSolid;
 template< class T = real_t>  class gsSolidVertex;

@@ -30,6 +30,9 @@ public:
     typedef gsMatrix<real_t>  VectorType;
 
     typedef Base::LinOpPtr LinOpPtr;
+    
+    typedef memory::shared_ptr<gsMinimalResidual> Ptr;
+    typedef memory::unique_ptr<gsMinimalResidual> uPtr;
         
     /// @brief Constructor using a matrix (operator) and optionally a preconditionner
     ///
@@ -56,10 +59,11 @@ public:
     }
 
     /// @brief Set the options based on a gsOptionList
-    void setOptions(const gsOptionList & opt)
+    gsMinimalResidual& setOptions(const gsOptionList & opt)
     {
         Base::setOptions(opt);
         m_inexact_residual = opt.askSwitch("InexactResidual", m_inexact_residual);
+        return *this;
     }
 
     /// @brief If true, the residual is estimated, not accurately computed.

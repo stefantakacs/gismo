@@ -62,8 +62,11 @@ public:
     typedef typename Base::iterator        iterator;
     typedef typename Base::const_iterator  const_iterator;
 
-    /// Shared pointer for gsTensorBSplineBasis
+    /// Smart pointer for gsTensorBSplineBasis
     typedef memory::shared_ptr< Self_t > Ptr;
+
+    /// Smart pointer for gsTensorBSplineBasis
+    typedef memory::unique_ptr< Self_t > uPtr;
 
 public:
 
@@ -169,9 +172,8 @@ public:
         this->getComponentsForSide(s,rr);
         return BoundaryBasisType::New(rr);
     }
-    
-    gsTensorBSplineBasis * clone() const
-    { return new gsTensorBSplineBasis(*this); }
+
+    GISMO_CLONE_FUNCTION(gsTensorBSplineBasis)
     
     static Self_t * New(std::vector<gsBasis<T>*> & bb )
     { return new Self_t(bb); }
@@ -179,6 +181,12 @@ public:
     static Self_t * New(std::vector<Basis_t*> & bb )
     { return new Self_t(bb); }
 
+    static uPtr make(std::vector<gsBasis<T>*> & bb )
+    { return uPtr( new Self_t(bb) ); }
+
+    static uPtr make(std::vector<Basis_t*> & bb )
+    { return uPtr( new Self_t(bb) ); }
+    
 public:
 
     KnotVectorType & knots (int i)
@@ -280,7 +288,7 @@ public:
      */
     void refine_withCoefs(gsMatrix<T> & coefs,const std::vector< std::vector<T> >& refineKnots);
 
-    /// Inserts the knot \em knot with multiplicity \mult in the knot
+    /// Inserts the knot \em knot with multiplicity \em mult in the knot
     /// vector of direction \a dir.
     void insertKnot(T knot, index_t dir, int mult=1)
     { this->knots(dir).insert( knot, mult); }
@@ -327,6 +335,7 @@ public:
      * \param[in] boxes gsMatrix of size <em>d</em> x <em>(2*N)</em>;
      * specifies areas for refinement.\n
      * See above for details and format.
+     * \param[in] refExt is ignored
      *
      * \remarks NOTE This function directly modifies the basis (by inserting
      * knots in the underlying univariate B-spline bases).

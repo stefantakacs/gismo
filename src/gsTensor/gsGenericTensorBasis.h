@@ -47,6 +47,12 @@ public:
 
     typedef gsBasis<T> Basis_t;
 
+    /// Shared pointer for gsGenericTensorBasis
+    typedef memory::shared_ptr< gsGenericTensorBasis > Ptr;
+
+    /// Unique pointer for gsGenericTensorBasis
+    typedef memory::unique_ptr< gsGenericTensorBasis > uPtr;
+
     // Associated geometry type
     typedef gsGenericGeometry<d,T> GeometryType;
 
@@ -63,12 +69,12 @@ public:
     gsGenericTensorBasis( Basis_t* x,  Basis_t*  y) : Base(x,y) { }
 
     gsGenericTensorBasis( const Basis_t & x, const Basis_t & y) :
-    Base(x.clone(),y.clone()) { }
+    Base(x.clone().release(), y.clone().release()) { }
 
     gsGenericTensorBasis( Basis_t* x,  Basis_t* y, Basis_t* z ) : Base(x,y,z) { }
 
     gsGenericTensorBasis( const Basis_t & x, const Basis_t & y, const Basis_t & z ) :
-        Base(x.clone(),y.clone(),z.clone()) { }
+        Base(x.clone().release(), y.clone().release(), z.clone().release()) { }
 
     gsGenericTensorBasis( std::vector<Basis_t*> & bb ) : Base(bb.data()) 
     { 
@@ -89,9 +95,7 @@ public:
         return os;
     }
 
-    /// Clone function. Used to make a copy of the object
-    gsGenericTensorBasis * clone() const
-    { return new gsGenericTensorBasis(*this); }
+    GISMO_CLONE_FUNCTION(gsGenericTensorBasis)
 
 };
 

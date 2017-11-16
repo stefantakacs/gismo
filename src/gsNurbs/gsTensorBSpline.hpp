@@ -129,7 +129,7 @@ void gsTensorBSpline<d,T>::slice(index_t dir_fixed,T par,
         else
         {
             // clone the basis and inserting upto degree knots at par
-            gsTensorBSpline<d,T>* clone = this->clone();
+            gsTensorBSpline<d,T>* clone = this->clone().release();
 
             gsVector<index_t,d> intStrides;
             this->basis().stride_cwise(intStrides);
@@ -293,7 +293,7 @@ void gsTensorBSpline<d,T>::insertKnot( T knot, int dir, int i)
 
 
 template<unsigned d, class T>
-gsGeometry<T> * gsTensorBSpline<d,T>::localRep(const gsMatrix<T> & u) const
+typename gsGeometry<T>::uPtr gsTensorBSpline<d,T>::localRep(const gsMatrix<T> & u) const
 {
     std::vector<KnotVectorType> kv(d); // the local knot-vectors
     gsVector<index_t,d> cfirst, clast; // tensor-indices of local coefficients

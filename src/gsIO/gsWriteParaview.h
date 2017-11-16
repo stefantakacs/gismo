@@ -11,6 +11,7 @@
     Author(s): A. Mantzaflaris
 */
 
+#include <gsCore/gsGeometry.h>
 #include <gsCore/gsForwardDeclarations.h>
 #include <gsCore/gsExport.h>
 
@@ -186,6 +187,8 @@ void gsWriteParaviewPoints(gsMatrix<T> const& points, std::string const & fn);
 /// \brief Export tensor-structured point set with field data to Paraview file
 ///
 /// \param points matrix that contain 2D or 3D points, points are columns
+/// \param data
+/// \param np
 /// \param fn filename where paraview file is written
 template<class T>
 void gsWriteParaviewTPgrid(gsMatrix<T> const& points,
@@ -195,6 +198,15 @@ void gsWriteParaviewTPgrid(gsMatrix<T> const& points,
 
 /// \brief Depicting edge graph of each volume of one gsSolid with a segmenting loop
 ///
+/// \param sl a gsMesh obect
+/// \param fn filename where paraview file is written
+/// \param numPoints_for_eachCurve number of points used for sampling each curve
+/// \param vol_Num ID of face(s), that should be written
+/// \param edgeThick thickness of edges
+/// \param translate "translate" vector, toward the volume is translated
+/// \param color_convex Color, if face is convex and not eloop.
+/// \param color_nonconvex Color, if face is not convex
+/// \param color_eloop Color, if is in heSet and convex
 /// \param eloop     a vector of ID numbers of vertices, often for representing a segmenting loop
 /// \todo please document
 template <class T>
@@ -278,23 +290,6 @@ void plot_errors(const gsMatrix<T> & orig,
                  const gsMatrix<T> & comp,
                  std::vector<T> const & errors,
                  std::string const & fn);
-
-
-namespace internal
-{
-
-/// Converts value to string
-template<typename T>
-std::string toString(T value)
-{
-    std::ostringstream convert;
-
-    convert << value;
-
-    return convert.str();
-}
-
-} // end namespace internal
 
 
 } // namespace gismo

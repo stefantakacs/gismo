@@ -49,6 +49,9 @@
 // in a compilation failure.
 #define exprtk_disable_string_capabilities
 
+#define exprtk_disable_rtl_io_file
+#define exprtk_disable_rtl_vecops
+
 #ifdef GISMO_WITH_ADIFF
   /* Optional automatic differentiation */
   #define DScalar gismo::ad::DScalar2<real_t,-1>
@@ -578,7 +581,7 @@ void gsFunctionExpr<T>::deriv2_into(const gsMatrix<T>& u, gsMatrix<T>& result) c
 }
 
 template<typename T>
-typename gsFunction<T>::uMatrixPtr
+gsMatrix<T>
 gsFunctionExpr<T>::hess(const gsMatrix<T>& u, unsigned coord) const 
 { 
     //gsDebug<< "Using finite differences (gsFunctionExpr::hess) for Hessian.\n";
@@ -588,7 +591,7 @@ gsFunctionExpr<T>::hess(const gsMatrix<T>& u, unsigned coord) const
     GISMO_ASSERT ( u.rows() == my->dim, "Inconsistent point dimension (expected: "
                    << my->dim <<", got "<< u.rows() <<")");
     
-    gsMatrix<T> * res = new gsMatrix<T>(d,d);
+    gsMatrix<T> res(d, d);
 
     const PrivateData_t & expr = 
 #   ifdef _OPENMP
@@ -599,22 +602,22 @@ gsFunctionExpr<T>::hess(const gsMatrix<T>& u, unsigned coord) const
 #   ifdef GISMO_WITH_ADIFF
     for (index_t v = 0; v!=d; ++v)
         expr.vars[v].setVariable(v, d, u(v,0) );
-    expr.expression[coord].value().hessian_into(*res);
+    expr.expression[coord].value().hessian_into(res);
 #   else
     copy_n(u.data(), expr.dim, expr.vars);
     for( int j=0; j!=d; ++j )
     {
-        (*res)(j,j) = exprtk::
+        res(j,j) = exprtk::
             second_derivative<T>( expr.expression[coord], expr.vars[j], 0.00001);
 
         for( int k = 0; k!=j; ++k )
-            (*res)(k,j) = (*res)(j,k) =
+            res(k,j) = res(j,k) =
                 mixed_derivative<T>( expr.expression[coord], expr.vars[k], 
                                      expr.vars[j], 0.00001 );
     }
 #   endif
 
-    return typename gsFunction<T>::uMatrixPtr(res); 
+    return res;
 }
 
 template<typename T>

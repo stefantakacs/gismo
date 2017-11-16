@@ -149,8 +149,8 @@ namespace internal
 /* ----------- IO ----------- */
 #include <gsIO/gsOptionList.h>
 #include <gsIO/gsCmdLine.h>
-#include <gsIO/gsCmdLineArgs.h>
 #include <gsIO/gsFileData.h>
+#include <gsIO/gsFileManager.h>
 #include <gsIO/gsWriteParaview.h>
 #include <gsIO/gsParaviewCollection.h>
 #include <gsIO/gsReadFile.h>

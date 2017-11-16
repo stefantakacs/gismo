@@ -19,14 +19,15 @@ message("STATUS CMake Will attempt to download FDBB sources.")
 include(ExternalProject)
 ExternalProject_Add(FDBB
           SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/FDBB
-          URL https://gitlab.com/mmoelle1/FDBB/repository/archive.zip
+          #URL https://gitlab.com/mmoelle1/FDBB/repository/archive.zip
+          GIT_REPOSITORY https://gitlab.com/mmoelle1/FDBB.git
           CONFIGURE_COMMAND ""
           BUILD_COMMAND ""
           UPDATE_COMMAND ""
           INSTALL_COMMAND ""
 )
 
-set(FDBB_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/FDBB/src CACHE INTERNAL "")
+set(FDBB_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/FDBB/fdbb CACHE INTERNAL "")
 include_directories(${FDBB_INCLUDE_DIR})
 
 add_library(${PROJECT_NAME} OBJECT

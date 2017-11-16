@@ -13,7 +13,7 @@
 
 #pragma once
 
-#include <gsCore/gsBasis.h> // todo: remove
+//#include <gsCore/gsBasis.h> // todo: remove
 #include <gsCore/gsDomain.h>
 #include <gsCore/gsBoundary.h>
 
@@ -97,6 +97,9 @@ public:
      * documentation of gsDomainIterator.
      */
     virtual bool next() = 0;
+
+    /// \brief Proceeds to the next element (skipping #increment elements).
+    virtual bool next(index_t increment) = 0;
 
     /// Resets the iterator so that it points to the first element
     virtual void reset()

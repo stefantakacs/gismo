@@ -24,7 +24,7 @@ template<class T>
 gsMultiBasis<T>::gsMultiBasis( const gsBasis<T> & bb )
 : m_topology( bb.dim() )
 {
-    m_bases.push_back( bb.clone() );
+    m_bases.push_back( bb.clone().release() );
     m_topology.addBox();
     m_topology.addAutoBoundaries();
 }
@@ -41,9 +41,20 @@ gsMultiBasis<T>::gsMultiBasis( const gsMultiBasis& other )
 : m_bases         ( other.m_bases.size() ),
   m_topology      ( other.m_topology     )
 {
-    cloneAll( other.m_bases.begin(), other.m_bases.end(),
-              this->m_bases.begin() );
+    cloneAll( other.m_bases.begin(), other.m_bases.end(), this->m_bases.begin() );
 }
+
+#if EIGEN_HAS_RVALUE_REFERENCES
+template<class T>
+gsMultiBasis<T>& gsMultiBasis<T>::operator= ( const gsMultiBasis& other )
+{
+    freeAll(m_bases);
+    m_bases.resize( other.m_bases.size() );
+    cloneAll( other.m_bases.begin(), other.m_bases.end(), this->m_bases.begin() );
+    m_topology = other.m_topology;
+    return *this;
+}
+#endif
 
 template<class T>
 gsMultiBasis<T>::~gsMultiBasis()

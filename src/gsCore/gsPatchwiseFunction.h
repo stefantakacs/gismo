@@ -35,8 +35,7 @@ public:
 
     virtual ~gsPatchwiseFunction() { }    
 
-    /// Clones the function object, making a deep copy.
-    virtual gsPatchwiseFunction * clone() const = 0;
+    GISMO_CLONE_FUNCTION_FORWARD(gsPatchwiseFunction)
 
     operator const gsFunction<T> & ()
     { 

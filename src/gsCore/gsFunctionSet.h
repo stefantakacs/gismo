@@ -18,7 +18,23 @@
 #pragma once
 
 #include <gsCore/gsLinearAlgebra.h>
-#include <gsCore/gsForwardDeclarations.h>
+//#include <gsCore/gsForwardDeclarations.h> // included by gsLinearAlgebra.h
+
+// Declaration and definition (2nd argument for virtual)
+#define GISMO_CLONE_FUNCTION(x, ...) \
+private: __VA_ARGS__ x * doClone() const { return new x(*this); } \
+public: inline uPtr clone() const { return uPtr(doClone()); }
+
+// Declaration of pure virtual
+#define GISMO_CLONE_FUNCTION_FORWARD(x) \
+private: virtual x * doClone() const = 0; \
+public: inline uPtr clone() const { return uPtr(doClone()); }
+
+// Declaration and definition with (throw of) message
+// (2nd argument for virtual)
+#define GISMO_CLONE_FUNCTION_NO_IMPLEMENTATION(x, ...) \
+private: __VA_ARGS__ x * doClone() const { GISMO_NO_IMPLEMENTATION } \
+public: inline uPtr clone() const { return uPtr(doClone()); }
 
 namespace gismo {
 
@@ -60,7 +76,7 @@ namespace gismo {
    of the input matrix or of the matrix supplied by the gsTransform object.
    On each column the data is grouped in blocks corresponding to different functions,
    so that that if the requested evaluation contains s values
-   \f$ v_1, \ldots, v_s \f$ for each pair \f$ (f_i, p_j) \f$, \f$i = 1, \ldots, S\f$, $j = 1, \ldots, N$,
+   \f$ v_1, \ldots, v_s \f$ for each pair \f$ (f_i, p_j) \f$ , \f$ i = 1, \ldots, S \f$, \f$ j = 1, \ldots, N \f$ ,
    of (function, point) the output matrix looks like
 
    \f[
@@ -101,13 +117,11 @@ template <typename T>
 class gsFunctionSet
 {
 public:
-    /// Shared pointer for gsFunction
+    /// Shared pointer for gsFunctionSet
     typedef memory::shared_ptr< gsFunctionSet > Ptr;
 
-    /// Autopointer for gsFunction
-    typedef memory::shared_ptr< gsFunctionSet > uPtr;
-
-    typedef typename gsMatrix<T>::uPtr       uMatrixPtr;
+    /// Unique pointer for gsFunctionSet
+    typedef memory::unique_ptr< gsFunctionSet > uPtr;
 
     typedef std::pair<int,int> dim_t;
 public:
@@ -118,9 +132,7 @@ public:
 
     virtual ~gsFunctionSet();
 
-    /// @brief Clone this basis, making a deep copy.
-    virtual gsFunctionSet * clone() const //= 0;
-    {GISMO_NO_IMPLEMENTATION}
+    GISMO_CLONE_FUNCTION_NO_IMPLEMENTATION(gsFunctionSet, virtual)
 
     /// @brief Returns the piece(s) of the function(s) at subdomain \a k
     virtual const gsFunctionSet & piece(const index_t k) const {return *this;}
@@ -294,10 +306,10 @@ public:
                                   std::vector<gsMatrix<T> > & result) const;
 
     /// Evaluate the function, \see eval_into()
-    uMatrixPtr eval(const gsMatrix<T>& u) const;
+    gsMatrix<T> eval(const gsMatrix<T>& u) const;
 
     /// Evaluate the derivatives, \see deriv_into()
-    uMatrixPtr deriv(const gsMatrix<T>& u) const;
+    gsMatrix<T> deriv(const gsMatrix<T>& u) const;
 
     /** \brief Evaluates the second derivatives of active (i.e., non-zero) basis at points \a u.
      
@@ -310,7 +322,7 @@ public:
         \return  For every column of \a u, a column containing the second derivatives.
         See documentation for deriv2_into() (the one without input parameter \em coefs) for details.
     */
-    uMatrixPtr deriv2(const gsMatrix<T>& u) const;
+    gsMatrix<T> deriv2(const gsMatrix<T>& u) const;
 
 
     /// @brief Returns the indices of active (nonzero) functions at
@@ -401,7 +413,7 @@ public:
        This function evaluates the functions and their derivatives at
        the points \a in and writes them in the corresponding fields of \a out.
        Which field to write (and what to compute) is controlled
-       by the \a out.flags (see also \link gsFuncData).
+       by the \a out.flags (see also gsFuncData).
      
        The input points \a in are expected to be compatible with the
        implementation/representation of the function, i.e. they should
@@ -419,7 +431,7 @@ public:
        the points contained in the gsMapData geo. The computed values
        are written in the corresponding fields of \a result.  Which
        field to write (and what to compute) is controlled by the \a
-       out.flags (see also \link gsFuncData).  Contrarily to
+       out.flags (see also gsFuncData).  Contrarily to
        compute(const gsMatrix<T> &, gsFuncData<T> &) where the caller
        must provide either parametric or physical points this call
        differenciate automatically.  

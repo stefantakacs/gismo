@@ -64,20 +64,16 @@ public:
     /// Shared pointer for gsFunction
     typedef memory::shared_ptr< gsFunction > Ptr;
 
-    /// Autopointer for gsFunction
-    typedef memory::shared_ptr< gsFunction > uPtr;
-
-    typedef typename gsMatrix<T>::uPtr       uMatrixPtr;
+    /// Unique pointer for gsFunction
+    typedef memory::unique_ptr< gsFunction > uPtr;
 
     typedef typename Base::dim_t dim_t;
     
     using Base::support;
     using Base::domainDim;
     using Base::targetDim;
-public:
 
-    virtual gsFunction * clone() const // = 0;
-    {GISMO_NO_IMPLEMENTATION}
+    GISMO_CLONE_FUNCTION_NO_IMPLEMENTATION(gsFunction, virtual)
 
     virtual const gsFunction & piece(const index_t k) const
     {
@@ -177,7 +173,7 @@ public:
      */
     void div_into(const gsMatrix<T>& u, gsMatrix<T>& result) const;
 
-    uMatrixPtr jacobian(const gsMatrix<T>& u) const;
+    gsMatrix<T> jacobian(const gsMatrix<T>& u) const;
 
     /** @brief Evaluate second derivatives of the function at points \a u into \a result.
      *
@@ -201,7 +197,7 @@ public:
   
     /// Evaluates the Hessian (matrix of second partial derivatives) of
     /// coordinate \a coord at points \a u.
-    virtual uMatrixPtr hess(const gsMatrix<T>& u, unsigned coord = 0) const;
+    virtual gsMatrix<T> hess(const gsMatrix<T>& u, unsigned coord = 0) const;
 
     /// @brief Evaluate the Laplacian at points \a u.
     ///
@@ -238,7 +234,7 @@ public:
        This function evaluates the functions and their derivatives at
        the points \a InOut.points and writes them in the corresponding
        fields of \a InOut. Which field to write (and what to compute)
-       is controlled by the \a InOut.flags (see also \link gsMapData ).
+       is controlled by the \a InOut.flags (see also gsMapData).
        This is intended for parametrizations only and it works on
        functions sets of cardinality 1 only.
 

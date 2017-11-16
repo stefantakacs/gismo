@@ -8,7 +8,7 @@
     License, v. 2.0. If a copy of the MPL was not distributed with this
     file, You can obtain one at http://mozilla.org/MPL/2.0/.
     
-    Author(s): C. Hofreither, A. Mantzaflaris
+    Author(s): C. Hofreither, A. Mantzaflaris, J. Vogl
 */
 
 #pragma once
@@ -69,7 +69,7 @@ usage:
 memory::unique_ptr<int> B;
 \endcode
 */
-#if __cplusplus >= 201103
+#if __cplusplus >= 201103 || (defined(_MSC_VER) && _MSC_VER >= 1600)
 using std::unique_ptr;
 #else
 
@@ -84,41 +84,39 @@ class unique_ptr : public std::auto_ptr<T>
 public :
     explicit unique_ptr(T* p = 0)  throw() : Base(p) { }
     
-    //unique_ptr(unique_ptr& r)  throw() : Base(r) { }
-    
- unique_ptr( const unique_ptr& r ) : Base( const_cast<unique_ptr&>(r) ) { }
+    unique_ptr(const unique_ptr& r) : Base( const_cast<unique_ptr&>(r) ) { }
     
     unique_ptr(unique_ptr_ref m)  throw() : Base(m) { }
     
     template<typename U>
-      unique_ptr(unique_ptr<U> & r
-		 // unique_ptr<typename conditional<is_base_of<U,T>::value, U,
-		 //                      Cannot_Convert_Pointer >::type>
-		 )  throw()
-      : Base(r) { }
+    unique_ptr(const unique_ptr<U> & r
+               // unique_ptr<typename conditional<is_base_of<U,T>::value, U,
+               //                      Cannot_Convert_Pointer >::type>
+        )  throw()
+    : Base( const_cast<unique_ptr<U>&>(r) ) { }
     
     unique_ptr & operator=(const unique_ptr& other)  throw()
-      {
-	Base::operator=(const_cast<unique_ptr&>(other));
-	return *this;
-      }
+    {
+        Base::operator=(const_cast<unique_ptr&>(other));
+        return *this;
+    }
     
     template<class U>
-      unique_ptr & operator=(const unique_ptr<U> & other) throw()
-      {
-	Base::operator=(const_cast<unique_ptr<U>&>(other));
-	return *this;
-      }
+    unique_ptr & operator=(const unique_ptr<U> & other) throw()
+    {
+        Base::operator=(const_cast<unique_ptr<U>&>(other));
+        return *this;
+    }
     
     //operator shared_ptr<T> () { return shared_ptr<T>(this->release()); }
     
     template<class U> operator shared_ptr<U>()
-      // shared_ptr<typename conditional<is_base_of<U,T>::value, U,
-      //                      Cannot_Convert_Pointer >::type> ()
-      { return shared_ptr<U>(Base::release()); }
+    // shared_ptr<typename conditional<is_base_of<U,T>::value, U,
+    //                      Cannot_Convert_Pointer >::type> ()
+    { return shared_ptr<U>(Base::release()); }
     
-	bool operator!() const { return Base::get() == NULL; }
-	
+    bool operator!() const { return Base::get() == NULL; }
+
 private:
 
     struct SafeBool
@@ -131,8 +129,27 @@ public:
 
     operator bool_cast_type() const
     { return !Base::get() ? 0 : &SafeBool::dummy; }
- };
- 
+};
+
+template<class T>
+bool operator==(const unique_ptr<T> & p1, const unique_ptr<T> & p2)
+{ return p1.get()==p2.get(); }
+template<class T>
+bool operator!=(const unique_ptr<T> & p1, const unique_ptr<T> & p2)
+{ return p1.get()!=p2.get(); }
+template<class T>
+bool operator<(const unique_ptr<T> & p1, const unique_ptr<T> & p2)
+{ return p1.get()<p2.get(); }
+template<class T>
+bool operator>(const unique_ptr<T> & p1, const unique_ptr<T> & p2)
+{ return p1.get()>p2.get(); }
+template<class T>
+bool operator<=(const unique_ptr<T> & p1, const unique_ptr<T> & p2)
+{ return p1.get()<=p2.get(); }
+template<class T>
+bool  operator>=(const unique_ptr<T> & p1, const unique_ptr<T> & p2)
+{ return p1.get()>=p2.get(); }
+
 #endif
 
 /// \brief Deleter function that does not delete an object pointer
@@ -169,6 +186,12 @@ template <typename T>
 inline unique_ptr<T> make_unique(T * x)
 { return unique_ptr<T>(x); }
 
+/// \brief Converts a uPtr \a p to an uPtr
+/// of class \a C and gives it back as return value.
+template<class C, typename from>
+inline unique_ptr<C> convert_ptr(from p)
+{ return unique_ptr<C>( dynamic_cast<C*>(p.release()) ); }
+
 /// Takes a vector of smart pointers and returns the corresponding raw pointers.
 template <typename T>
 inline std::vector<T*> get_raw(const std::vector< unique_ptr<T> >& cont)
@@ -200,11 +223,9 @@ inline std::vector<T*> release(std::vector< unique_ptr<T> >& cont)
     return result;
 }
 
-
-
 } // namespace memory
 
-#if __cplusplus >= 201103
+#if __cplusplus >= 201103 || (defined(_MSC_VER) && _MSC_VER >= 1600)
 /** 
     Alias for std::move, to be used instead of writing std::move for
     keeping backward c++98 compatibility
@@ -213,14 +234,15 @@ inline std::vector<T*> release(std::vector< unique_ptr<T> >& cont)
 template <class T> inline
 auto give(T&& t) -> decltype(std::move(std::forward<T>(t)))
 {
-#ifdef GISMO_EXTRA_DEBUG
+#if defined(GISMO_EXTRA_DEBUG) && ! defined(_MSC_VER)
+    // TODO: is there way that also MS can check this?
     GISMO_STATIC_ASSERT( util::has_move_constructor<typename std::remove_reference<T>::type>::value, "There is no move constructor. Copy would be created." );
 #endif
     return std::move(std::forward<T>(t));
 }
 
 #else
-/** 
+/**
     Alias for std::move, to be used instead of std::move for backward
     c++98 compatibility
 
@@ -234,8 +256,8 @@ memory::unique_ptr<T> give(memory::unique_ptr<T> & x)
 { return memory::unique_ptr<T>(x.release()); }
 
 template <typename T> inline
-memory::unique_ptr<T> give(memory::shared_ptr<T> & x)
-{ return memory::unique_ptr<T>(x.release()); }
+memory::shared_ptr<T> give(memory::shared_ptr<T> & x)
+{ memory::shared_ptr<T> result = x; x.reset(); return result; }
 
 #endif
 
@@ -264,15 +286,16 @@ inline memory::unique_ptr<T> safe(T *x)
 
 
 /// \brief Clones all pointers in the range [\a start \a end) and stores new
-/// pointers in iterator \a out
+/// raw pointers in iterator \a out.
 template <typename It, typename ItOut>
 void cloneAll(It start, It end, ItOut out)
 {
     for (It i = start; i != end; ++i)
-        *out++ = (*i)->clone();
+        *out++ = dynamic_cast<typename std::iterator_traits<ItOut>::value_type>((*i)->clone().release());
 }
 
-/// \brief Clones all pointers in the container \a in and stores them in contrainer \a out
+/// \brief Clones all pointers in the container \a in and stores them as raw
+/// pointers in container \a out
 template <typename ContIn, typename ContOut>
 void cloneAll(const ContIn& in, ContOut& out)
 {

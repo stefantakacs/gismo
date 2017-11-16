@@ -27,6 +27,7 @@ struct condition_type
     /// Specifies the type of boundary condition
     enum type
     {
+        unknownType = -1,
         dirichlet = 0, ///< Dirichlet type
         neumann   = 1, ///< Neumann type
         robin     = 2  ///< Robin type
@@ -87,8 +88,9 @@ struct boundary_condition
       m_parametric(parametric)
     {
         if (m_label == "Dirichlet") m_type = condition_type::dirichlet;
-        if (m_label == "Neumann")   m_type = condition_type::neumann;
-        if (m_label == "Robin")     m_type = condition_type::robin;
+        else if (m_label == "Neumann")   m_type = condition_type::neumann;
+        else if (m_label == "Robin")     m_type = condition_type::robin;
+        else m_type = condition_type::unknownType;
     }
     
     boundary_condition( int p, boxSide s, const function_ptr & f_shptr,
@@ -412,6 +414,14 @@ public:
             boundary_condition<T>(p, s, f_ptr, label, unknown, comp, parametric) );
     }
 
+    void add(int p, boxSide s, const std::string & label,
+             const gsFunction<T> & f, int unknown = 0,
+             int comp = -1, bool parametric = false)
+    {
+        function_ptr fun = memory::make_shared(f.clone().release());
+        add(p,s,label,fun,unknown,comp,parametric);
+    }
+
     /** \brief Adds another boundary condition
      *
      * Creates an object of type boundary_condition and adds is to
@@ -458,7 +468,7 @@ public:
                       const gsFunction<T> & func, int unknown = 0,
                       bool parametric = false)
     {
-        function_ptr fun(func.clone());
+        function_ptr fun(func.clone().release());
         addCondition(p,s,t,fun,unknown,parametric);
     }
 
@@ -582,7 +592,12 @@ public:
         for(typename std::vector<boundary_condition<T> >::const_iterator it = bc_all.begin(); it!= bc_all.end();it++)
         {
             if((*it).patch()==np)
-                result.addCondition(0,(*it).side(),(*it).type(),(*it).function(),(*it).unknown());
+            {
+                if(it->type() == condition_type::dirichlet || it->type() == condition_type::neumann || it->type() == condition_type::robin)
+                    result.addCondition(0,(*it).side(),(*it).type(),(*it).function(),(*it).unknown());
+                else
+                   result.add(0,(*it).side(),it->ctype(),(*it).function(),(*it).unknown());
+            }
         }
 
         for(const_citerator it = cornerBegin(); it!= cornerEnd();it++)
@@ -637,7 +652,10 @@ public:
 
     /// Get transformation matrix for the periodic pairs of sides
     gsMatrix<T> getTransformMatrix() const
-    { return m_trMatrix; }
+    { 
+        GISMO_ASSERT(m_trMatrix.rows() > 0, "Transformation matrix for periodic conditions not set!");
+        return m_trMatrix; 
+    }
 
     // Data members
 private:

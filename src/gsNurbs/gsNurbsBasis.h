@@ -100,8 +100,7 @@ public:
 public:
 
     /// Clone function. Used to make a copy of a derived basis
-    gsNurbsBasis * clone() const
-    { return new gsNurbsBasis(*this); }
+    GISMO_CLONE_FUNCTION(gsNurbsBasis)
   
     GISMO_MAKE_GEOMETRY_NEW
 

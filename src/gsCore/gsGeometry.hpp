@@ -23,7 +23,7 @@ namespace gismo
 {
 
 template<class T>
-gsGeometry<T> *
+typename gsGeometry<T>::uPtr
 gsGeometry<T>::boundary(boxSide const& s) const
 {
     gsMatrix<unsigned> ind = this->basis().boundary(s); // get indices of the boundary DOF
@@ -35,7 +35,7 @@ gsGeometry<T>::boundary(boxSide const& s) const
     }
 
     gsBasis<T> *Bs = this->basis().boundaryBasis(s);  // Basis for boundary side s
-    gsGeometry *bgeo = Bs->makeGeometry( give(coeffs) );
+    uPtr bgeo = Bs->makeGeometry( give(coeffs) );
 
     delete Bs;
     return bgeo;
@@ -127,30 +127,27 @@ std::vector<gsGeometry<T> *> gsGeometry<T>:: boundary() const
 template<class T>
 void gsGeometry<T>::degreeElevate(int const i, int const dir)
 {
-    gsBasis<T> * b = m_basis->clone();
+    typename gsBasis<T>::uPtr b = m_basis->clone();
  
     if ( dir == -1 )
         b->degreeElevate(i);
     else if (dir < parDim() )
-        b->component(dir).degreeElevate(i);        
+        b->degreeElevate(i, dir);
     else
         GISMO_ERROR("Invalid direction "<< dir <<" to elevate.");
 
     gsMatrix<T> iVals, iPts = b->anchors();
     this->eval_into(iPts, iVals);
-    gsGeometry<T> * g = b->interpolateData(iVals, iPts);
+    typename gsGeometry<T>::uPtr g = b->interpolateData(iVals, iPts);
 
     std::swap(m_basis, g->m_basis);
     g->coefs().swap(this->coefs());
-
-    delete g;
-    delete b;
 }
 
 template<class T>
 void gsGeometry<T>::degreeReduce(int const i, int const dir)
 {
-    gsBasis<T> * b = m_basis->clone();
+    typename gsBasis<T>::uPtr b = m_basis->clone();
  
     if ( dir == -1 )
         b->degreeReduce(i);
@@ -161,13 +158,10 @@ void gsGeometry<T>::degreeReduce(int const i, int const dir)
 
     gsMatrix<T> iVals, iPts = b->anchors();
     this->eval_into(iPts, iVals);
-    gsGeometry<T> * g = b->interpolateData(iVals, iPts);
+    typename gsGeometry<T>::uPtr g = b->interpolateData(iVals, iPts);
 
     std::swap(m_basis, g->m_basis);
     g->coefs().swap(this->coefs());
-
-    delete g;
-    delete b;
 }
 
 template<class T>

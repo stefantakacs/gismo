@@ -19,28 +19,19 @@ http://gs.jku.at/gismo
 
 The latest revision of the code can be obtained from github:
 
-https://github.com/filiatra/gismo
+https://github.com/gismo/gismo
 
 Using subversion:
 
-svn co https://github.com/filiatra/gismo/trunk gismo
+svn co https://github.com/gismo/gismo/trunk gismo
 
 or using git:
 
-git clone git@github.com:filiatra/gismo.git
+git clone git@github.com:gismo/gismo.git
 
 or as a zip file:
 
-https://github.com/filiatra/gismo/archive/stable.zip
-
-If you prefer an updatable copy and you do not have a GitHub account, there is also an anonymous SVN repository 
-
-svn co https://ricamsvn.ricam.oeaw.ac.at/gismo/stable gismo
-
-In this case you will be asked for username and password, use
-
-Username: anonsvn
-Password: anonsvn
+https://github.com/gismo/gismo/archive/stable.zip
 
 ======================================================================
 =====                      Prerequisites                         ===== 
@@ -216,7 +207,7 @@ Files related to doxygen documentation.
 
 * Bug reports: 
 
-  https://github.com/filiatra/gismo/issues
+  https://github.com/gismo/gismo/issues
 
 ======================================================================
 =====                             People                         ===== 
@@ -260,10 +251,10 @@ Files related to doxygen documentation.
         Michael Pauley 
 
 ======================================================================
-=====            Acknowledgement and os-licence                  ===== 
+=====            Acknowledgement and os-licesce                  ===== 
 ======================================================================
 
 G+Smo library for isogeometric analysis is supported by the Research
 Network ``Geometry + Simulation'' (NFN S117), funded by the Austrian
 Science Fund, www.gs.jku.at.  It is distributed under the Mozilla
-Public License v2.0.  (see LICENCE.txt).
+Public License v2.0.  (see LICENSE.txt).

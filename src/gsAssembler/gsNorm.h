@@ -31,11 +31,13 @@ public:
 
     /// Constructor using a multipatch domain
     gsNorm(const gsField<T> & _field1,
-           const gsFunctionSet<T> & _func2) 
+           const gsFunctionSet<T> & _func2)
     : m_zeroFunction(T(0.0),_field1.parDim()), patchesPtr( &_field1.patches() ),
       field1(&_field1), func2(&_func2)
     { }
-    
+
+    virtual ~gsNorm() {}
+        
     /// Constructor using a multipatch domain
     explicit gsNorm(const gsField<T> & _field1)
     : m_zeroFunction(gsVector<T>::Zero(_field1.dim()),_field1.parDim()), patchesPtr( &_field1.patches() ),
@@ -46,6 +48,37 @@ public:
     {
         field1 = &_field1;
     }
+    /*
+    * Methods compute, initialize, evaluate, compute, takeRoot have been added in order
+    * to provide the opportunity to use the polymorphism of the gsNorm and classes
+    * gsErrEstPoissonResidual and gsErrEstDualMajorant
+    * inherited from the gsNorm
+    */
+    virtual T compute(bool storeElWise = false)
+    {
+        this->apply(*this,storeElWise);
+        return m_value;
+    }
+    virtual T compute(bool storeElWise, int elemNum)
+    {
+        this->applyElem(*this, storeElWise, elemNum);
+        return m_value;
+    }
+    virtual void initialize(const gsBasis<T> & basis,
+                        gsQuadRule<T> & rule,
+                        unsigned      & evFlags) = 0;
+
+    virtual void evaluate(gsGeometryEvaluator<T> & geoEval,
+                  const gsFunction<T>    & _func1,
+                  const gsFunction<T>    & _func2,
+                  gsMatrix<T>            & quNodes) = 0;
+
+    virtual T compute(gsDomainIterator<T>    & element,
+                 gsGeometryEvaluator<T> & geoEval,
+                 gsVector<T> const      & quWeights,
+                 T & accumulated) = 0;
+
+    virtual T takeRoot(const T v) { return math::sqrt(v); }
 
     /** \brief Main function for norm-computation.
      *
@@ -80,7 +113,7 @@ public:
             const gsBasis<T> & dom = field1->isParametrized() ? 
                 field1->igaFunction(pn).basis() : field1->patch(pn).basis();
 
-            // Initialize visitor
+             // Initialize visitor
             visitor.initialize(dom, QuRule, evFlags);
 
             // Initialize geometry evaluator
@@ -88,19 +121,69 @@ public:
                 patchesPtr->patch(pn).evaluator(evFlags));
             
             typename gsBasis<T>::domainIter domIt = dom.makeDomainIterator(side);
-            for (; domIt->good(); domIt->next())
-            {
+
+            // TODO: optimization of the assembling routine, it's too slow for now
+            for(; domIt->good(); domIt->next()) {
                 // Map the Quadrature rule to the element
-                QuRule.mapTo( domIt->lowerCorner(), domIt->upperCorner(), quNodes, quWeights );
+                QuRule.mapTo(domIt->lowerCorner(), domIt->upperCorner(), quNodes, quWeights);
 
                 // Evaluate on quadrature points
                 visitor.evaluate(*geoEval, func1, func2p, quNodes);
-                
+
                 // Accumulate value from the current element (squared)
                 const T result = visitor.compute(*domIt, *geoEval, quWeights, m_value);
-                if ( storeElWise )
-                    m_elWise.push_back( visitor.takeRoot(result) );
+                if (storeElWise) m_elWise.push_back(visitor.takeRoot(result));
             }
+
+        }
+
+        m_value = visitor.takeRoot(m_value);
+    }
+
+    template <class NormVisitor>
+    void applyElem(NormVisitor & visitor, bool storeElWise, int elemNum, boxSide side = boundary::none)
+    {
+        if ( storeElWise )
+            m_elWise.reserve(elemNum);
+
+        gsMatrix<T> quNodes  ; // Temp variable for mapped nodes
+        gsVector<T> quWeights; // Temp variable for mapped weights
+        gsQuadRule<T> QuRule; // Reference Quadrature rule
+
+        // Evaluation flags for the Geometry map
+        unsigned evFlags(0);
+
+        m_value = T(0.0);
+        for (unsigned pn=0; pn < patchesPtr->nPatches(); ++pn )// for all patches
+        {
+            const gsFunction<T> & func1 = field1->function(pn);
+            const gsFunction<T> & func2p = func2->function(pn);
+            // Obtain an integration domain
+            const gsBasis<T> & dom = field1->isParametrized() ?
+                                     field1->igaFunction(pn).basis() : field1->patch(pn).basis();
+
+            // Initialize visitor
+            visitor.initialize(dom, QuRule, evFlags);
+
+            // Initialize geometry evaluator
+            typename gsGeometry<T>::Evaluator geoEval(
+                    patchesPtr->patch(pn).evaluator(evFlags));
+
+            typename gsBasis<T>::domainIter domIt = dom.makeDomainIterator(side);
+
+            // TODO: optimization of the assembling routine, it's too slow for now
+            for(; domIt->good(); domIt->next()) {
+                // Map the Quadrature rule to the element
+                QuRule.mapTo(domIt->lowerCorner(), domIt->upperCorner(), quNodes, quWeights);
+
+                // Evaluate on quadrature points
+                visitor.evaluate(*geoEval, func1, func2p, quNodes);
+
+                // Accumulate value from the current element (squared)
+                const T result = visitor.compute(*domIt, *geoEval, quWeights, m_value);
+                if (storeElWise) m_elWise.push_back(visitor.takeRoot(result));
+            }
+
         }
 
         m_value = visitor.takeRoot(m_value);
@@ -145,6 +228,7 @@ public:
             if ( storeElWise )
                 m_elWise.push_back( visitor.takeRoot(result) );
         }
+
     }
     
 public:
@@ -186,12 +270,13 @@ protected:
     const gsField<T>    * field1;
 
     const gsFunctionSet<T> * func2;
-  
+
 protected:
 
-    std::vector<T> m_elWise;
-    T              m_value;
-};
+    std::vector<T> m_elWise;    // vector of the element-wise values of the norm
+    T              m_value;     // the total value of the norm
+
+    };
 
 } // namespace gismo
 

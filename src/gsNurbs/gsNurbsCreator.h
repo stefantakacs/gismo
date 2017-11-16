@@ -35,7 +35,7 @@ namespace gismo
 template<class T>
 struct gsNurbsCreator
 {
-    typedef typename gsGeometry<T>::uPtr        GeometryPtr;
+    typedef memory::unique_ptr<gsGeometry<T> >        GeometryPtr;
     typedef typename gsBSpline<T>::uPtr         BSplinePtr;
     typedef typename gsNurbs<T>::uPtr           NurbsPtr;
     typedef typename gsTensorBSpline<2,T>::uPtr TensorBSpline2Ptr;
@@ -120,11 +120,12 @@ public:
                                            T const & y = 0, T const & z = 0 );
 
     static TensorNurbs2Ptr NurbsQuarterAnnulus( T const & r0 =1, T const & r1 =2);
-
     static TensorNurbs3Ptr BSplineSaddle();
-
     /// Inexact annulus using B-splines
     static GeometryPtr BSplineQuarterAnnulus(int const & deg = 2);
+
+    //static TensorNurbs2Ptr NurbsQuarterAnnulusMixedWithLShape();
+    //static GeometryPtr BSplineQuarterAnnulusMixedWithLShape(int const & deg = 2);
 
     /// Fat annulus using B-splines, discarding the weights of the exact NURBS
     ///  Analytical formulation (when r0 = 1 and r1 = 2):

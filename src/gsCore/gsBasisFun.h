@@ -41,13 +41,18 @@ private:
     gsBasisFun() { }
     
 public:
+    /// Shared pointer for gsBasisFun
+    typedef memory::shared_ptr< gsBasisFun > Ptr;
+
+    /// Unique pointer for gsBasisFun
+    typedef memory::unique_ptr< gsBasisFun > uPtr;
+
     /// Construct a basis function by a pointer to a basis and an index i
     gsBasisFun(const gsBasis<T> & basis, unsigned const i);
 
     ~gsBasisFun() { } //destructor
 
-    gsBasisFun * clone() const
-    { return new gsBasisFun(*this); }
+    GISMO_CLONE_FUNCTION(gsBasisFun)
 
 public:
   

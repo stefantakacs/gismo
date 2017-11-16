@@ -46,10 +46,10 @@ public:
     typedef gsBSplineBasis<T>  Family_t;
 
     /// Shared pointer for gsTensorBSpline
-    typedef memory::shared_ptr< gsTensorBSpline<d,T> > Ptr;
+    typedef memory::shared_ptr< gsTensorBSpline > Ptr;
 
     /// Unique pointer for gsTensorBSpline
-    typedef memory::unique_ptr< gsTensorBSpline> uPtr;
+    typedef memory::unique_ptr< gsTensorBSpline > uPtr;
 
     /// Associated Boundary basis type
     typedef typename gsBSplineTraits<d-1,T>::Geometry BoundaryGeometryType;
@@ -159,11 +159,7 @@ public:
         this->m_coefs = give(tcoefs);
     }
     
-    /// Clone function. Used to make a copy of the geometry
-    gsTensorBSpline * clone() const
-    {
-        return new gsTensorBSpline( *this );
-    }
+    GISMO_CLONE_FUNCTION(gsTensorBSpline)
 
     GISMO_BASIS_ACCESSORS
 
@@ -232,7 +228,7 @@ public:
     
     /// Returns a local representation of the geometry in the cell
     /// containing the point \a u
-    gsGeometry<T> * localRep(const gsMatrix<T> & u) const;
+    typename gsGeometry<T>::uPtr localRep(const gsMatrix<T> & u) const;
 
 private:
 

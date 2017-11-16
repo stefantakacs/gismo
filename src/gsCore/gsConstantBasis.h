@@ -34,7 +34,10 @@ template <class T>
 class gsConstantBasis : public gsBasis<T>
 {
 public:
+    /// Shared pointer for gsConstantBasis
     typedef memory::shared_ptr< gsConstantBasis > Ptr;
+
+    /// Unique pointer for gsConstantBasis
     typedef memory::unique_ptr< gsConstantBasis > uPtr;
 
     gsConstantBasis(T x , int domainDim  = 1)
@@ -52,8 +55,8 @@ public:
     gsConstantBasis(const std::vector<gsBasis<T>*> & rr)
     : m_val( 1.0 ), m_domainDim(1)
     { }
-      
-    gsConstantBasis * clone() const { return new gsConstantBasis(*this); }
+
+    GISMO_CLONE_FUNCTION(gsConstantBasis)
 
     static gsConstantBasis * New(std::vector<gsBasis<T>*> & bb )
     { 
@@ -96,10 +99,10 @@ public:
         return os; 
     }
 
-    gsGeometry<T> * makeGeometry( gsMatrix<T> coefs ) const 
+    memory::unique_ptr<gsGeometry<T> > makeGeometry( gsMatrix<T> coefs ) const
     {
         coefs *= m_val;
-        return new gsConstantFunction<T>(coefs.transpose(), m_domainDim);
+        return memory::unique_ptr<gsGeometry<T> >(new gsConstantFunction<T>(coefs.transpose(), m_domainDim));
     }
 
 public:

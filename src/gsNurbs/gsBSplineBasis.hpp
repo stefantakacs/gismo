@@ -842,25 +842,25 @@ gsMatrix<T> * gsTensorBSplineBasis<1,T>::laplacian(const gsMatrix<T> & u ) const
 }
 
 template <class T>
-gsBasis<T> * 
+typename gsBasis<T>::uPtr
 gsTensorBSplineBasis<1,T>::tensorize(const gsBasis<T> & other) const 
 { 
-    Self_t * ptr1 = dynamic_cast<Self_t*>(other. clone());
-    Self_t * ptr2 =  static_cast<Self_t*>( this->clone());
+    typename Self_t::uPtr ptr1 = memory::convert_ptr<Self_t>(other.clone());
+    //Self_t * ptr2 =  static_cast<Self_t*>(this->clone().release());
 
     if ( ptr1 )
-        return new gsTensorBSplineBasis<2,T>( ptr1, ptr2 );
+        return typename gsBasis<T>::uPtr(new gsTensorBSplineBasis<2,T>( ptr1.release(), this->clone().release() ));
     else
     {
         gsInfo<<"Invalid basis "<< other <<"\n";
-        return 0;
+        return typename gsBasis<T>::uPtr();
     }
 }
 
 template <class T>
-gsGeometry<T> * gsBSplineBasis<T>::makeGeometry( gsMatrix<T> coefs ) const
+memory::unique_ptr<gsGeometry<T> > gsBSplineBasis<T>::makeGeometry( gsMatrix<T> coefs ) const
 {
-    return new GeometryType(*this, give(coefs));
+    return typename gsGeometry<T>::uPtr(new GeometryType(*this, give(coefs)));
 }
 
 template <class T>
@@ -1203,12 +1203,6 @@ void gsTensorBSplineBasis<1,T>::_stretchEndKnots()
 }
 
 /* ********************************************** */
-
-template <class T>
-gsBSplineBasis<T> * gsBSplineBasis<T>::clone() const
-{ 
-    return new gsBSplineBasis(*this); 
-}
 
 template <class T>
 gsBSplineBasis<T> & gsBSplineBasis<T>::component(unsigned i)

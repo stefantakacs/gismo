@@ -32,22 +32,33 @@ template<class T>
 class gsAbsError : public gsFunction<T> 
 {
 public:
+    /// Shared pointer for gsAbsError
+    typedef memory::shared_ptr< gsAbsError > Ptr;
+
+    /// Unique pointer for gsAbsError
+    typedef memory::unique_ptr< gsAbsError > uPtr;
+
     gsAbsError( gsFunction<T> const & f1, 
                 gsGeometry<T> const & geo, 
-                gsFunction<T> const & f2 )
-    : m_geo(geo), m_f1(f1), m_f2(f2)
+                gsFunction<T> const & f2,
+                bool _f2param = false)
+    : m_geo(geo), m_f1(f1), m_f2(f2), f2param(_f2param)
     { 
             
     }
 
-    gsAbsError * clone() const
-    { return new gsAbsError(*this); }
+    GISMO_CLONE_FUNCTION(gsAbsError)
 
     void eval_into(const gsMatrix<T>& u, gsMatrix<T>& result) const
     {
         gsMatrix<T> tmp;
         m_geo.eval_into(u, tmp);
-        result.noalias() = ( *m_f1.eval(u) - *m_f2.eval(tmp) ).cwiseAbs();
+
+        if(!f2param)
+            result.noalias() = ( m_f1.eval(u) - m_f2.eval(tmp) ).cwiseAbs();
+        else
+            result.noalias() = ( m_f1.eval(u) - m_f2.eval(u) ).cwiseAbs(); // f2 parametric function
+
     }
 
     int domainDim() const { return m_f1.domainDim(); }
@@ -61,6 +72,8 @@ private:
 
     const gsFunction<T> & m_f1;
     const gsFunction<T> & m_f2;
+
+    bool f2param;
 
 private:
 //    gsAbsError() { }
@@ -78,12 +91,17 @@ template<class T>
 class gsGradientField : public gsFunction<T> 
 {
 public:
+    /// Shared pointer for gsGradientField
+    typedef memory::shared_ptr< gsGradientField > Ptr;
+
+    /// Unique pointer for gsGradientField
+    typedef memory::unique_ptr< gsGradientField > uPtr;
+
     gsGradientField( gsGeometry<T> const & geo, gsFunction<T> const & f)
     : m_geo(geo), m_f(f)
     { }
 
-    gsGradientField * clone() const
-    { return new gsGradientField(*this); }
+    GISMO_CLONE_FUNCTION(gsGradientField)
 
     void eval_into(const gsMatrix<T>& u, gsMatrix<T>& result) const
     {
@@ -114,21 +132,26 @@ template<class T>
 class gsJacDetField : public gsFunction<T> 
 {
 public:
+    /// Shared pointer for gsJacDetField
+    typedef memory::shared_ptr< gsJacDetField > Ptr;
+
+    /// Unique pointer for gsJacDetField
+    typedef memory::unique_ptr< gsJacDetField > uPtr;
+
     gsJacDetField( gsGeometry<T> const & geo)
     : m_geo(geo), m_dim(m_geo.parDim())
     { 
         GISMO_ENSURE(m_dim == m_geo.geoDim(), "Not extended to surface case yet." );
     }
 
-    gsJacDetField * clone() const
-    { return new gsJacDetField(*this); }
+    GISMO_CLONE_FUNCTION(gsJacDetField)
 
     void eval_into(const gsMatrix<T>& u, gsMatrix<T>& result) const
     {
         result.resize(1, u.cols() );
         gsMatrix<T> tmp;
         for (index_t k=0; k!= u.cols(); ++k)
-            result(0,k) = m_geo.deriv(u.col(k))->reshape(m_dim,m_dim).determinant();
+            result(0,k) = m_geo.deriv(u.col(k)).reshape(m_dim,m_dim).determinant();
     }
 
     int domainDim() const { return m_geo.parDim(); }
@@ -153,13 +176,18 @@ template<class T>
 class gsNormalField : public gsFunction<T> 
 {
 public:
+    /// Shared pointer for gsNormalField
+    typedef memory::shared_ptr< gsNormalField > Ptr;
+
+    /// Unique pointer for gsNormalField
+    typedef memory::unique_ptr< gsNormalField > uPtr;
+
     gsNormalField( gsGeometry<T> const & geo) : m_geo(geo)
     { 
             
     }
 
-    gsNormalField * clone() const
-    { return new gsNormalField(*this); }
+    GISMO_CLONE_FUNCTION(gsNormalField)
 
     void eval_into(const gsMatrix<T>& u, gsMatrix<T>& result) const
     {
@@ -207,14 +235,19 @@ template<class T>
 class gsParamField : public gsFunction<T> 
 {
 public:
+    /// Shared pointer for gsParamField
+    typedef memory::shared_ptr< gsParamField > Ptr;
+
+    /// Unique pointer for gsParamField
+    typedef memory::unique_ptr< gsParamField > uPtr;
+
     gsParamField(gsGeometry<T> const & geo)
     : m_geo(geo)
     { 
             
     }
 
-    gsParamField * clone() const
-    { return new gsParamField(*this); }
+    GISMO_CLONE_FUNCTION(gsParamField)
 
     void eval_into(const gsMatrix<T>& u, gsMatrix<T>& result) const
     { result = u; }
@@ -243,12 +276,17 @@ template<class T>
 class gsBoundaryField : public gsFunction<T> 
 {
 public:
+    /// Shared pointer for gsBoundaryField
+    typedef memory::shared_ptr< gsBoundaryField > Ptr;
+
+    /// Unique pointer for gsBoundaryField
+    typedef memory::unique_ptr< gsBoundaryField > uPtr;
+
     explicit gsBoundaryField(gsGeometry<T> const & geo_)
     : geo(geo_), m_supp(geo.support())
     { }
 
-    gsBoundaryField * clone() const
-    { return new gsBoundaryField(*this); }
+    GISMO_CLONE_FUNCTION(gsBoundaryField)
 
     void eval_into(const gsMatrix<T>& u, gsMatrix<T>& result) const
     { 
@@ -292,14 +330,14 @@ template<class T>
 struct gsFieldCreator
 {
 
-    static gsField<T> absError(gsField<T> const & field, gsFunction<T> const & f)
+    static gsField<T> absError(gsField<T> const & field, gsFunction<T> const & f, bool fparam = false)
     {
         const gsMultiPatch<T> & mp = field.patches();
     
         gsPiecewiseFunction<T> * nFields = new gsPiecewiseFunction<T>(mp.nPatches());
         
         for (unsigned k=0; k< mp.nPatches(); ++k)
-            nFields->addPiecePointer( new gsAbsError<T>(field.function(k), mp.patch(k), f) );
+            nFields->addPiecePointer( new gsAbsError<T>(field.function(k), mp.patch(k), f, fparam) );
         
         return gsField<T>(mp, typename gsPiecewiseFunction<T>::Ptr(nFields), true );
     }

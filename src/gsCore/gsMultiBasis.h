@@ -69,7 +69,6 @@ public:
     /// Create a single-basis instance
     gsMultiBasis( const gsBasis<T> & geo );
 
-
     /// Create from bases and boundary/interface information
     gsMultiBasis( BasisContainer & bases,
                   const std::vector<patchSide>& boundary,
@@ -84,18 +83,31 @@ public:
 
     /// Copy constructor (makes deep copy)
     gsMultiBasis( const gsMultiBasis& other );
+    
+#if EIGEN_HAS_RVALUE_REFERENCES
+    /// Move constructor
+    gsMultiBasis(gsMultiBasis&& other) : m_bases(give(other.m_bases)), m_topology(give(other.m_topology)) {}
 
+    /// Assignment operator
+    gsMultiBasis& operator= ( const gsMultiBasis& other );
+    
+    /// Move assignment operator
+    gsMultiBasis& operator= ( gsMultiBasis&& other )
+    {
+        m_bases = give(other.m_bases);
+        m_topology = give(other.m_topology);
+        return *this;
+    }
+#else
     /// Assignment operator (uses copy-and-swap idiom)
     gsMultiBasis& operator= ( gsMultiBasis other )
     {
         this->swap( other );
         return *this;
     }
+#endif
 
-    /// Clone function. Used to make a copy of the object
-    gsMultiBasis* clone() const {
-        return new gsMultiBasis( *this );
-    }
+    GISMO_CLONE_FUNCTION(gsMultiBasis)
 
 public:
 
@@ -264,7 +276,7 @@ public:
     void addBasis( gsBasis<T> * g );
 
     /// @brief Add a basis (ownership of the pointer is also acquired)
-    void addBasis(typename gsBasis<T>::uPtr g);    
+    void addBasis(typename gsBasis<T>::uPtr g);
 
     /// @brief Search for the given basis and return its index.
     int findBasisIndex( gsBasis<T>* g ) const;

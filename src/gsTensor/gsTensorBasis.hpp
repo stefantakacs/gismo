@@ -19,6 +19,7 @@
 
 #include <gsCore/gsBoundary.h>
 #include <gsUtils/gsMesh/gsMesh.h>
+#include <gsCore/gsGeometry.h>
 //#include <gsUtils/gsSortedVector.h>
 
 
@@ -99,7 +100,7 @@ gsTensorBasis<d,T>::gsTensorBasis( const gsTensorBasis & o)
 : gsBasis<T>(o)
 {
     for (unsigned i = 0; i < d; ++i)
-        m_bases[i] = o.m_bases[i]->clone();
+        m_bases[i] = o.m_bases[i]->clone().release();
 }
 
 
@@ -113,7 +114,7 @@ gsTensorBasis<d,T>& gsTensorBasis<d,T>::operator=( const gsTensorBasis & o)
     for (unsigned i = 0; i < d; ++i)
     {
         delete m_bases[i];
-        m_bases[i] = o.m_bases[i]->clone();
+        m_bases[i] = o.m_bases[i]->clone().release();
     }
     return *this;
 }
@@ -295,7 +296,7 @@ gsMatrix<unsigned> gsTensorBasis<d,T>::allBoundary() const
             bdofs.insert( bd(i) );
     }
 
-    return (*(makeMatrix<unsigned>(bdofs.begin(), bdofs.size(), 1 )));
+    return makeMatrix<unsigned>(bdofs.begin(), bdofs.size(), 1 );
 
     /* // returns boundary with repetitions
        unsigned sz(0), i(0), r(0);
@@ -405,7 +406,7 @@ gsTensorBasis<d,T>::getComponentsForSide(boxSide const& s, std::vector<Basis_t*>
     rr.reserve( d - 1 );
     for ( unsigned i=0; i < d; ++i )
         if (i != dir)
-            rr.push_back( m_bases[i]->clone() );
+            rr.push_back(m_bases[i]->clone().release());
 }
 
 
@@ -892,7 +893,7 @@ gsTensorBasis<d,T>::makeDomainIterator(const boxSide & s) const
 
 
 template<unsigned d, class T>
-gsGeometry<T> * 
+typename gsGeometry<T>::uPtr
 gsTensorBasis<d,T>::interpolateAtAnchors(gsMatrix<T> const& vals) const
 {
     std::vector<gsMatrix<T> > grid(d);
@@ -905,7 +906,7 @@ gsTensorBasis<d,T>::interpolateAtAnchors(gsMatrix<T> const& vals) const
 
 
 template<unsigned d, class T>
-gsGeometry<T> * 
+typename gsGeometry<T>::uPtr
 gsTensorBasis<d,T>::interpolateGrid(gsMatrix<T> const& vals,
                                           std::vector<gsMatrix<T> >const& grid) const
 {
@@ -941,7 +942,7 @@ gsTensorBasis<d,T>::interpolateGrid(gsMatrix<T> const& vals,
             gsWarn<< "Failed LU decomposition for:\n";//<< Cmat.toDense() <<"\n";
             gsWarn<< "Points:\n"<< grid[i] <<"\n";
             gsWarn<< "Knots:\n"<< m_bases[i]->detail() <<"\n";
-            return 0;
+            return typename gsGeometry<T>::uPtr();
         }
         #endif
         // Transpose solution component-wise

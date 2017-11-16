@@ -33,6 +33,12 @@ public:
     typedef typename FunctionContainer::iterator       fiterator;
     typedef typename FunctionContainer::const_iterator const_fiterator;
 
+    /// Shared pointer for gsPiecewiseFunction
+    typedef memory::shared_ptr< gsPiecewiseFunction > Ptr;
+
+    /// Unique pointer for gsPiecewiseFunction
+    typedef memory::unique_ptr< gsPiecewiseFunction > uPtr;
+
 public:
 
     gsPiecewiseFunction(index_t npieces = 0)
@@ -40,7 +46,7 @@ public:
 
     gsPiecewiseFunction(const gsFunction<T> & func)
     {
-        m_funcs.push_back(func.clone());
+        m_funcs.push_back(func.clone().release());
         //m_funcs.resize(n, func.clone());
     }
 
@@ -74,16 +80,7 @@ public:
         m_funcs.swap( other.m_funcs );
     }
 
-public:
-
-    /// Clones the function object, making a deep copy.
-    gsPiecewiseFunction * clone() const
-    {
-        gsPiecewiseFunction* c= new gsPiecewiseFunction();
-        for(size_t i=0; i<m_funcs.size();i++)
-            c->addPiece(piece(i));
-        return c;
-    }
+    GISMO_CLONE_FUNCTION(gsPiecewiseFunction)
 
     int domainDim () const {return m_funcs.front()->domainDim();};
     int targetDim () const {return m_funcs.front()->targetDim();};
@@ -91,14 +88,19 @@ public:
     /// Add a piece
     void addPiece(const gsFunction<T> & func)
     { 
-        m_funcs.push_back( func.clone() );
+        m_funcs.push_back( func.clone().release() );
     }
 
     void addPiecePointer(gsFunction<T> * func)
     { 
         m_funcs.push_back( func );
     }
-    
+
+    void addPiecePointer(typename gsFunction<T>::uPtr func)
+    {
+        m_funcs.push_back(func.release());
+    }
+
     const gsFunction<T> & piece(const index_t i) const 
     { 
         GISMO_ASSERT(static_cast<size_t>(i) < m_funcs.size(), "Wrong piece index");

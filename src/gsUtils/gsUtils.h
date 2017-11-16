@@ -8,7 +8,7 @@
     License, v. 2.0. If a copy of the MPL was not distributed with this
     file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
- Author(s): A. Mantzaflaris, Harald Weiner
+ Author(s): A. Mantzaflaris, Harald Weiner, J. Vogl
 */
 
 #pragma once
@@ -47,8 +47,21 @@ std::string to_string(const C & value)
     return convert.str();
 }
 
-#if __cplusplus > 199711L
-using std::to_string;
+/// \brief Checks if a string \a haystack begins with the string \a needle
+/// \ingroup Utils
+inline bool starts_with( const std::string & haystack, const std::string & needle )
+{
+    std::string::const_iterator it1 = haystack.begin();
+    std::string::const_iterator it2 = needle.begin();
+    while ( it2!=needle.end() )
+    {
+        if ( it1 == haystack.end() || *it1 != *it2) return false;
+        it1++; it2++;
+    }
+    return true;
+}
+
+#if __cplusplus > 199711L || (defined(_MSC_VER) && _MSC_VER >= 1600)
 using std::iota;
 using std::stod;
 using std::stoi;
@@ -150,7 +163,7 @@ inline void capitalize(std::string& str)
 
 /// \brief Capitalize string
 /// \ingroup Utils
-inline std::string capitalize(const std::string& str)
+inline std::string returnCapitalized(const std::string& str)
 {
     std::string newStr = str;
     capitalize(newStr);
@@ -202,6 +215,15 @@ std::size_t hash_range(T const * start, const T * const end)
         seed ^= *start + 0x9e3779b9 + (seed << 6) + (seed >> 2);
     return seed;
 }
+
+/// \brief Systemspecific path-separator symbol
+/// \ingroup Utils
+const char SEPARATOR =
+#if defined _WIN32 || defined __CYGWIN__
+    '\\';
+#else
+    '/';
+#endif
 
 } // end namespace util
 

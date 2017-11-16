@@ -74,10 +74,11 @@ struct lvl_coef
 template<unsigned d, class T>
 class gsHTensorBasis: public gsBasis<T>
 {
-
 public:
     /// Shared pointer for gsHTensorBasis
     typedef memory::shared_ptr< gsHTensorBasis > Ptr;
+
+    /// Unique pointer for gsHTensorBasis
     typedef memory::unique_ptr< gsHTensorBasis > uPtr;
 
     typedef gsHTensorBasis<d,T> Self_t;
@@ -481,8 +482,7 @@ public:
                                           result);
     }
 
-    /// Clone function. Used to make a copy of a derived basis
-    virtual gsHTensorBasis * clone() const = 0;
+    GISMO_CLONE_FUNCTION_FORWARD(gsHTensorBasis)
 
     /// The number of basis functions in this basis
     index_t size() const;
@@ -591,7 +591,7 @@ public:
     /// \em n is the number of evaluation points.\n
     /// Each column of \em Pts represents one evaluation point.
     /// \param[out] lvl gsVector of length \em n with the levels of the respective points.
-    /// \param[out] lo  gsMatrix of size <em>d</em> x <em>n</em>.\n
+    /// \param[out] loIdx  gsMatrix of size <em>d</em> x <em>n</em>.\n
     /// Each column contains
     /// the lower corner of the knot span containing <em>i</em>-th point. The corner is given
     /// in unique knot span indices of level lvl[i].

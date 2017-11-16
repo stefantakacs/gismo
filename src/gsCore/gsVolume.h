@@ -30,10 +30,12 @@ template<class T>
 class gsVolume : public gsGeometry<T>
 {
 
-public: 
-  /// Shared pointer for gsVolume
+public:
+    /// Shared pointer for gsVolume
     typedef memory::shared_ptr< gsVolume > Ptr;
-//  typedef memory::unique_ptr< gsVolume > LocalPtr;
+
+    /// Unique pointer for gsVolume
+    typedef memory::unique_ptr< gsVolume > uPtr;
 
     typedef T Scalar_t;
 public:
@@ -57,7 +59,9 @@ public:
 
     /// @}
 
-    virtual gsVolume * clone() const = 0;
+    //GISMO_CLONE_FUNCTION_FORWARD(gsVolume)
+private: virtual gsVolume * doClone() const = 0; \
+public: inline uPtr clone() const { return uPtr(doClone()); }
 
     int domainDim() const { return 3; }
 

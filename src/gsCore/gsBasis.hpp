@@ -16,6 +16,7 @@
 #include <gsCore/gsBasisFun.h>
 #include <gsCore/gsDomainIterator.h>
 #include <gsCore/gsBoundary.h>
+#include <gsCore/gsGeometry.h>
 
 namespace gismo
 {
@@ -208,7 +209,7 @@ void gsBasis<T>::collocationMatrix(const gsMatrix<T> & u, gsSparseMatrix<T> & re
 }
 
 template<class T> inline
-gsGeometry<T> * gsBasis<T>::interpolateData( gsMatrix<T> const& vals,
+memory::unique_ptr<gsGeometry<T> > gsBasis<T>::interpolateData( gsMatrix<T> const& vals,
                                          gsMatrix<T> const& pts) const
 {
     GISMO_ASSERT (dim()  == pts.rows() , "Wrong dimension of the points("<<
@@ -236,7 +237,7 @@ gsGeometry<T> * gsBasis<T>::interpolateData( gsMatrix<T> const& vals,
 }
 
 template<class T> inline
-gsGeometry<T> * gsBasis<T>::interpolateAtAnchors(gsMatrix<T> const & vals) const
+memory::unique_ptr<gsGeometry<T> > gsBasis<T>::interpolateAtAnchors(gsMatrix<T> const & vals) const
 {
     GISMO_ASSERT (this->size() == vals.cols(), 
                   "Expecting as many values as the number of basis functions." );
@@ -399,12 +400,12 @@ void gsBasis<T>::evalDerSingle_into(unsigned i, const
 
 
 template<class T>
-gsBasis<T> * gsBasis<T>::create() const
+typename gsBasis<T>::uPtr gsBasis<T>::create() const
 { GISMO_NO_IMPLEMENTATION }
 
 
 template<class T>
-gsBasis<T> * gsBasis<T>::tensorize(const gsBasis & other) const 
+typename gsBasis<T>::uPtr gsBasis<T>::tensorize(const gsBasis & other) const
 { GISMO_NO_IMPLEMENTATION }
 
 template<class T>
@@ -481,6 +482,7 @@ void gsBasis<T>::degreeDecrease(int const & i, int dir)
 template<class T>
 void gsBasis<T>::setDegree(int const& i)
 { 
+    //TODO: If the degree is not the same in all directions, then this does not what is specified
     const int p = maxDegree();
     if ( i > p )
     {
@@ -491,6 +493,19 @@ void gsBasis<T>::setDegree(int const& i)
         degreeReduce(p-i); 
     }
 }
+
+template<class T>
+void gsBasis<T>::setDegreePreservingMultiplicity(int const& i)
+{ 
+    for ( index_t d = 0; d < dim(); ++ d )
+    {
+        if ( i > degree(d) )
+            degreeIncrease(i-degree(d),d);
+        else if ( i < degree(d) )
+            degreeDecrease(-i+degree(d),d);
+    }
+}
+
 
 template<class T>
 void gsBasis<T>::reduceContinuity(int const & i)

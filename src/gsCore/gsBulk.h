@@ -30,10 +30,12 @@ template<class T>
 class gsBulk : public gsGeometry<T>
 {
 
-public: 
-  /// Shared pointer for gsBulk
+public:
+    /// Shared pointer for gsBulk
     typedef memory::shared_ptr< gsBulk > Ptr;
-//  typedef memory::unique_ptr< gsBulk > LocalPtr;
+
+    /// Unique pointer for gsBulk
+    typedef memory::unique_ptr< gsBulk > uPtr;
 
     typedef T Scalar_t;
 public:
@@ -57,7 +59,7 @@ public:
 
     /// @}
 
-    virtual gsBulk * clone() const = 0;
+    GISMO_CLONE_FUNCTION_FORWARD(gsBulk)
 
     int domainDim() const { return 4; }
 

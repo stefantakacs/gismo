@@ -46,7 +46,7 @@ public:
     /// Shared pointer for gsFunctionExpr
     typedef memory::shared_ptr< gsFunctionExpr > Ptr;
 
-    /// Auto pointer for gsFunctionExpr
+    /// Unique pointer for gsFunctionExpr
     typedef memory::unique_ptr<gsFunctionExpr> uPtr;
 
 public:
@@ -96,10 +96,9 @@ public:
     ~gsFunctionExpr();
   
     gsFunctionExpr& operator=(gsFunctionExpr other);
-  
-    gsFunctionExpr * clone() const
-    { return new gsFunctionExpr(*this); }
 
+    GISMO_CLONE_FUNCTION(gsFunctionExpr)
+    
     /// \brief Adds another component to this (vector) function
     void addComponent(const std::string & strExpression);
 
@@ -133,11 +132,11 @@ public:
     void set_y (T const & v) const;
     /// Sets the symbol "z" to a value
     void set_z (T const & v) const;
-    /// Sets the symbol "u" to a value
-    void set_w (T const & v) const;
-    /// Sets the symbol "v" to a value
-    void set_u (T const & v) const;
     /// Sets the symbol "w" to a value
+    void set_w (T const & v) const;
+    /// Sets the symbol "u" to a value
+    void set_u (T const & v) const;
+    /// Sets the symbol "v" to a value
     void set_v (T const & v) const;
   
     // see gsFunction for documentation
@@ -157,7 +156,7 @@ public:
                              gsMatrix<T>& result) const;
 
     // see gsFunction for documentation  
-    typename gsFunction<T>::uMatrixPtr hess(const gsMatrix<T>& u, unsigned coord = 0) const;
+    gsMatrix<T> hess(const gsMatrix<T>& u, unsigned coord = 0) const;
   
     // see gsFunction for documentation  
     gsMatrix<T> * laplacian(const gsMatrix<T>& u) const;

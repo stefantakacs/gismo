@@ -40,10 +40,12 @@ public:
     typedef typename gsGeoTraits<d,T>::GeometryBase Base;
 
     typedef gsHBSplineBasis<d,T> Basis;
-    
+
     /// Shared pointer for gsHBSpline
-    typedef memory::shared_ptr< gsHBSpline<d,T> > Ptr;
-    typedef memory::unique_ptr< gsHBSpline<d,T> > uPtr;
+    typedef memory::shared_ptr< gsHBSpline > Ptr;
+
+    /// Unique pointer for gsHBSpline
+    typedef memory::unique_ptr< gsHBSpline > uPtr;
     
     typedef typename 
     util::conditional<d==1, gsConstantFunction<T>, gsHBSpline<d-1,T>
@@ -70,10 +72,8 @@ public:
         this->m_basis = new Basis(tbsp);
         this->m_coefs = tbsp->coefs();
     }
-  
-    /// Clone the gsHBspline
-    virtual gsHBSpline * clone() const
-    { return new gsHBSpline(*this); };
+
+    GISMO_CLONE_FUNCTION(gsHBSpline, virtual)
 
     GISMO_BASIS_ACCESSORS
   
@@ -104,7 +104,7 @@ public:
             anchorsInGeom.bottomRows(anchorsSlice.rows()-dir_fixed)=anchorsSlice.bottomRows(anchorsSlice.rows()-dir_fixed);
             this->eval_into(anchorsInGeom,vals);
             BoundaryGeometryType* geom =
-                    dynamic_cast<BoundaryGeometryType *>(bBasis->interpolateAtAnchors(vals));
+                    dynamic_cast<BoundaryGeometryType *>(bBasis->interpolateAtAnchors(vals).release()); //todo make it better
             GISMO_ASSERT(geom!=NULL,"bBasis should have BoundaryGeometryType.");
             result = *geom;
             delete geom;
