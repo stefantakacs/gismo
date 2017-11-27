@@ -28,16 +28,21 @@ include(CTest)
 enable_testing()
 
 # Collect source file names
-FILE (GLOB unittests_SRCS *.cpp)
+aux_gs_cpp_directory(${PROJECT_SOURCE_DIR} unittests_SRCS)
 
 get_filename_component(PARENT_DIR ${PROJECT_SOURCE_DIR} PATH)
 
-add_executable(unittests ${unittests_SRCS} main.cpp)
-target_link_libraries(unittests ${GSUNITTEST_LIBRARY} gismo)
-set_property(TARGET unittests PROPERTY LABELS unittests)
 
-add_dependencies(${PROJECT_NAME} gsUnitTest)
+add_executable(${PROJECT_NAME} gismo_unittest.h ${unittests_SRCS} main.cpp)
+#target_link_libraries(${PROJECT_NAME} ${GSUNITTEST_LIBRARY} gismo)
+target_link_libraries(${PROJECT_NAME} gsUnitTest_lib gismo)
+set_target_properties(${PROJECT_NAME} PROPERTIES LABELS "${PROJECT_NAME}" FOLDER "${PROJECT_NAME}")
 
+#CTEST_BUILD_TARGET=ALL
+add_dependencies(${PROJECT_NAME}  gsUnitTest) # gsUnitTest_lib
+if (NOT NOSNIPPETS)
+  add_dependencies(${PROJECT_NAME} doc-snippets) # doc-snippets are tests as well
+endif()
 
 foreach(file ${unittests_SRCS})
     get_filename_component(testname ${file} NAME_WE) # name without extension
@@ -46,7 +51,3 @@ foreach(file ${unittests_SRCS})
 endforeach(file ${FILES})
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin/)
-
-if (NOT NOSNIPPETS)
-  add_dependencies(unittests doc-snippets)
-endif()

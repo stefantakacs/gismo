@@ -85,12 +85,10 @@ gsBoundaryConditions<real_t> createSimpleGsBoundaryConditiions()
 
 gsFunctionExpr<real_t> getFunctionExpr(boundary_condition<real_t> bc)
 {
-    bool funcTypeSame1 = 
-        dynamic_cast<gsFunctionExpr<real_t>*>(bc.m_function.get());
-    CHECK(funcTypeSame1);
+    CHECK( 0 != dynamic_cast<gsFunctionExpr<real_t>*>(bc.m_function.get()) );
     gsFunction<real_t>::Ptr ptr = bc.m_function;
     gsFunctionExpr<real_t> * ptr2 =
-            dynamic_cast<gsFunctionExpr<real_t> *>(ptr.get());
+        dynamic_cast<gsFunctionExpr<real_t> *>(ptr.get());
     gsFunctionExpr<real_t> result = *ptr2;
     return result;
 }
@@ -201,7 +199,7 @@ void checkGsBoundaryCondition(const gsBoundaryConditions<real_t> & sut)
     CHECK_EQUAL(elems4, bcc4.size());
     CHECK_EQUAL(elems4, bcc5.size());
     // check bctype_iterator
-    typedef typename gismo::gsBoundaryConditions<real_t>::const_bciterator bctype_it;
+    typedef gismo::gsBoundaryConditions<real_t>::const_bciterator bctype_it;
     int c = 0;
     for (bctype_it it = sut.beginAll(); it != sut.endAll(); ++it)
     {
